@@ -1,6 +1,7 @@
 package com.coralblocks.coralring.memory;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -9,6 +10,9 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import sun.misc.Unsafe;
 import sun.nio.ch.FileChannelImpl;
@@ -95,6 +99,7 @@ public class SharedMemory implements Memory {
 	private final long pointer;
 	private final long size;
 	private final MappedByteBuffer mbb;
+	private final String filename;
 	
 	public SharedMemory(long size) {
 		this(size, createFilename(size));
@@ -131,7 +136,8 @@ public class SharedMemory implements Memory {
 					}
 				}
 			}
-			
+
+			this.filename = filename;
 			RandomAccessFile file = new RandomAccessFile(filename, "rw");
 			file.setLength(size);
 			FileChannel fileChannel = file.getChannel();
@@ -156,13 +162,17 @@ public class SharedMemory implements Memory {
 		return SharedMemory.class.getSimpleName() + "-" + size + ".mmap";
 	}
 	
+	public String getFilename() {
+		return filename;
+	}
+	
 	@Override
 	public long getPointer() {
 		return pointer;
 	}
 
 	@Override
-	public void release() {
+	public void release(boolean deleteFileIfUsed) {
 		try {
 			if (isJava21) {
 				unmmap.invoke(null, this.mbb);
@@ -171,7 +181,18 @@ public class SharedMemory implements Memory {
 			}
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot release mmap shared memory!", e);
+		} finally {
+			if (deleteFileIfUsed) deleteFile();
 		}
+	}
+	
+	private void deleteFile() {
+		Path path = Paths.get(filename);
+        try {
+            Files.deleteIfExists(path); // if someone else deleted it
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete the file: " + filename, e);
+        }
 	}
 
 	@Override
@@ -245,16 +266,6 @@ public class SharedMemory implements Memory {
 	}
 
 	@Override
-	public char getChar(long address) {
-		return unsafe.getChar(null, address);
-	}
-
-	@Override
-	public void putChar(long address, char value) {
-		unsafe.putChar(null, address, value);
-	}
-
-	@Override
 	public short getShortVolatile(long address) {
 		return unsafe.getShortVolatile(null, address);
 	}
@@ -264,16 +275,6 @@ public class SharedMemory implements Memory {
 		unsafe.putShortVolatile(null, address, value);
 	}
 
-	@Override
-	public char getCharVolatile(long address) {
-		return unsafe.getCharVolatile(null, address);
-	}
-
-	@Override
-	public void putCharVolatile(long address, char value) {
-		unsafe.putCharVolatile(null, address, value);
-	}
-	
 	@Override
 	public void putByteBuffer(long address, ByteBuffer src, int len) {
 		if (!src.isDirect()) {

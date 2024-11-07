@@ -21,7 +21,7 @@ public interface Memory {
 	
 	public long getPointer();
 	
-	public void release();
+	public void release(boolean deleteFileIfUsed);
 	
 	// ==========
 	
@@ -41,10 +41,6 @@ public interface Memory {
 	
 	public void putShort(long address, short value);
 	
-	public char getChar(long address);
-	
-	public void putChar(long address, char value);
-	
 	// ==========
 	
 	public int getIntVolatile(long address);
@@ -62,10 +58,6 @@ public interface Memory {
 	public long getLongVolatile(long address);
 
 	public void putLongVolatile(long address, long value);
-	
-	public char getCharVolatile(long address);
-	
-	public void putCharVolatile(long address, char value);
 	
 	// ==========
 	
