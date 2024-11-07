@@ -1,12 +1,9 @@
 #!/bin/bash
 
-# Step 1: Capture the Java version output
 version_output=$(java -version 2>&1)
 
-# Step 2: Extract the version line
 version_line=$(echo "$version_output" | head -n 1)
 
-# Step 3: Extract the major version number
 if [[ $version_line =~ \"([0-9]+\.[0-9]+) ]]; then
     version_number="${BASH_REMATCH[1]}"
     if [[ $version_number == 1.* ]]; then
@@ -21,9 +18,22 @@ else
     exit 1
 fi
 
+if [[ "$major_version" != "8" 
+        && "$major_version" != "11" 
+        && "$major_version" != "16" 
+        && "$major_version" != "17" 
+        && "$major_version" != "20"
+        && "$major_version" != "21"
+        && "$major_version" != "23"
+    ]]; then
+    echo
+    echo "This Java version is not supported! => $major_version"
+    echo
+    exit
+fi
+
 ADD_OPENS=""
 
-# Step 4: Compare the major version and print "HELLO" if greater than 8
 if (( major_version > 8 )); then
     ADD_OPENS="--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
 fi
