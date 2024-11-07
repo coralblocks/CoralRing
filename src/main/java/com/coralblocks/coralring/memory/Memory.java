@@ -23,7 +23,7 @@ public interface Memory {
 	
 	public void release();
 	
-	//
+	// ==========
 	
 	public long getLong(long address);
 
@@ -45,7 +45,7 @@ public interface Memory {
 	
 	public void putChar(long address, char value);
 	
-	//
+	// ==========
 	
 	public int getIntVolatile(long address);
 	
@@ -67,7 +67,7 @@ public interface Memory {
 	
 	public void putCharVolatile(long address, char value);
 	
-	//
+	// ==========
 	
 	public void putByteBuffer(long address, ByteBuffer src, int len);
 	
