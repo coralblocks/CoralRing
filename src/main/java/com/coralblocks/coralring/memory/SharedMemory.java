@@ -175,6 +175,9 @@ public class SharedMemory implements Memory {
 
 	@Override
 	public void release(boolean deleteFileIfUsed) {
+		
+		RuntimeException firstException = null;
+		
 		try {
 			if (isJava19) { // isJava21 will be true here too
 				unmmap.invoke(null, pointer, size);
@@ -184,18 +187,23 @@ public class SharedMemory implements Memory {
 				unmmap.invoke(null, pointer, size);
 			}
 		} catch(Exception e) {
-			throw new RuntimeException("Cannot release mmap shared memory!", e);
+			firstException = new RuntimeException("Cannot release mmap shared memory!", e);
+			throw firstException;
 		} finally {
-			if (deleteFileIfUsed) deleteFile();
+			if (deleteFileIfUsed) deleteFile(firstException);
 		}
 	}
 	
-	private void deleteFile() {
+	private void deleteFile(Exception firstException) {
 		Path path = Paths.get(filename);
         try {
             Files.deleteIfExists(path); // if someone else deleted it
         } catch (IOException e) {
-            throw new RuntimeException("Failed to delete the file: " + filename, e);
+        	RuntimeException exception = new RuntimeException("Failed to delete the file: " + filename, e);
+        	if (firstException != null) {
+        		exception.addSuppressed(firstException);
+        	}
+            throw exception;
         }
 	}
 
