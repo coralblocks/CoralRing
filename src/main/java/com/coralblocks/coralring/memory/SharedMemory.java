@@ -43,6 +43,7 @@ public class SharedMemory implements Memory {
 	
 	private static boolean isNewSyncMap = false;
 	private static boolean isJava21 = false;
+	private static boolean isJava19 = false;
 	private static Method mmap;
 	private static Method unmmap;
 	private static final Field addressField;
@@ -73,6 +74,7 @@ public class SharedMemory implements Memory {
 			
 			try {
 				unmmap = getMethod(FileChannelImpl.class, "unmap0", long.class, long.class);
+				isJava19 = true;
 			} catch(Exception e) {
 				unmmap = getMethod(FileChannelImpl.class, "unmap", MappedByteBuffer.class);
 				isJava21 = true;
@@ -174,7 +176,9 @@ public class SharedMemory implements Memory {
 	@Override
 	public void release(boolean deleteFileIfUsed) {
 		try {
-			if (isJava21) {
+			if (isJava19) { // isJava21 will be true here too
+				unmmap.invoke(null, pointer, size);
+			} else if (isJava21) {
 				unmmap.invoke(null, this.mbb);
 			} else {
 				unmmap.invoke(null, pointer, size);
