@@ -107,6 +107,10 @@ public class SharedMemory implements Memory {
 		this(size, createFilename(size));
 	}
 	
+	public SharedMemory(String filename) {
+		this(-1, filename);
+	}
+	
 	public SharedMemory(long size, String filename) {
 		
 		if (!UNSAFE_AVAILABLE) {
@@ -119,6 +123,12 @@ public class SharedMemory implements Memory {
 		
 		if (!ADDRESS_AVAILABLE) {
 			throw new IllegalStateException("Cannot get address field from Buffer through reflection!");
+		}
+		
+		if (size == -1) {
+			size = findFileSize(filename);
+		} else if (size <= 0) {
+			throw new IllegalArgumentException("Invalid size: " + size);
 		}
 		
 		if (size > MAX_SIZE) throw new IllegalArgumentException("This size is not supported: " + size + " (MAX = " + MAX_SIZE + ")");
@@ -160,7 +170,15 @@ public class SharedMemory implements Memory {
 		}
 	}
 	
+	public final static long findFileSize(String filename) {
+		File file = new File(filename);
+		if (!file.exists()) throw new RuntimeException("File not found: " + filename);
+		if (file.isDirectory()) throw new RuntimeException("File is a directory: " + filename);
+		return file.length();
+	}
+	
 	private final static String createFilename(long size) {
+		if (size <= 0) throw new IllegalArgumentException("Cannot create file with this size: " + size);
 		return SharedMemory.class.getSimpleName() + "-" + size + ".mmap";
 	}
 	

@@ -9,18 +9,14 @@ public class SharedMemoryConsumer {
 		
 		final String filename = "shared-pipe.mmap";
 		
-		final int size = 4 // header size = 4
-					   + 4 * 32 // 32 integers
-					   + 4; // last integer to send */
-		
-		Memory memory = new SharedMemory(size, filename);
+		Memory memory = new SharedMemory(filename); // size will be taken from file
 		final long address = memory.getPointer();
 		
 		final int headerOffset = 4;
 		int producerIndex = -1;
 		int lastIndexRead = -1;
 		
-		OUTER: while(true) {
+		OUTER: while(true) { // busy spin
 
 			producerIndex = memory.getIntVolatile(address);
 			
@@ -42,7 +38,6 @@ public class SharedMemoryConsumer {
 				}
 				
 				lastIndexRead = producerIndex;
-				
 			}
 		}
 		
