@@ -59,6 +59,11 @@
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
+          <fork>true</fork>
+          <compilerArgs>
+            <arg>-Xlint:-options</arg>
+            <arg>-XDignore.symbol.file</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
 
