@@ -56,7 +56,7 @@ public class SharedMemoryConsumer {
 			}
 		}
 		
-		memory.release(true); // don't delete the file, consumer may still be reading it
+		memory.release(true); // also delete the file when done (producer will be done too)
 		
 		System.out.println("\nConsumer DONE!");
 	}
