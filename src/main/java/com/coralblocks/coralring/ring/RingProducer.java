@@ -27,7 +27,7 @@ import com.coralblocks.coralring.util.MemoryPaddedLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.ObjectPool;
 
-public class OffHeapProducer<E extends MemorySerializable> {
+public class RingProducer<E extends MemorySerializable> {
 	
 	private final static int DEFAULT_CAPACITY = 1024;
 	private final static int CACHE_LINE = 64;
@@ -49,7 +49,7 @@ public class OffHeapProducer<E extends MemorySerializable> {
 	private final LinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 
-    public OffHeapProducer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
+    public RingProducer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -67,15 +67,15 @@ public class OffHeapProducer<E extends MemorySerializable> {
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
 	
-	public OffHeapProducer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
+	public RingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
-	public OffHeapProducer(int maxObjectSize, Builder<E> builder, String filename) {
+	public RingProducer(int maxObjectSize, Builder<E> builder, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename);
 	}
 	
-	public OffHeapProducer(int maxObjectSize, Class<E> klass, String filename) {
+	public RingProducer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
