@@ -27,12 +27,40 @@ import com.coralblocks.coralring.util.MemoryPaddedLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.ObjectPool;
 
+/**
+ * <p>
+ * The producer side of a queue that uses shared memory instead of heap memory so that communication can happen across JVMs.
+ * Refer to the <a href="https://www.github.com/coralblocks/CoralQueue" target="_blank">CoralQueue</a> project for more details.
+ * </p>
+ * <p>
+ * The shared memory allocated for the ring contains a header space where the producer and consumer sequence numbers are kept and maintained for mutual access.
+ * A memory barrier is implemented through the {@link MemoryPaddedLong} class, which uses the <code>putVolatile</code> and <code>getVolatile</code> native memory operations.
+ * </p>
+ * <p>
+ * We assume a CPU cache line of 64 bytes and we place each sequence number (consumer one and producer one) on each cache line. The sequence number is a <code>long</code>
+ * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
+ * </p>
+ * 
+ * @param <E> The data transfer {@link MemorySerializable} object to be used by this ring
+ */
 public class RingProducer<E extends MemorySerializable> {
 	
+	// The default capacity for this shared memory ring
 	private final static int DEFAULT_CAPACITY = 1024;
-	private final static int CACHE_LINE = 64;
-	private final static int HEADER_SIZE = CACHE_LINE + CACHE_LINE;
-	private final static int SEQ_OFFSET = 1;
+	
+	// So that the sequence lands in the middle of the cache line
+	private final static int SEQ_PREFIX_PADDING = 24;
+
+	// A typical CPU cache line
+	private final static int CPU_CACHE_LINE = 64;
+	
+	// Two cache lines, one for each sequence number
+	private final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
+	
+	// The sequence value will be stored in memory with this offset
+	// Why? This make the code cleaner and easier to understand when
+	// producer and consumer are accessing each other's sequences.
+	private final static int SEQ_VALUE_OFFSET = 1;
 
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -59,9 +87,9 @@ public class RingProducer<E extends MemorySerializable> {
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress, SEQ_OFFSET, memory);
-		this.pollSequence = new MemoryPaddedLong(headerAddress + CACHE_LINE, SEQ_OFFSET, memory);
-		this.lastOfferedSeq = offerSequence.get();
+		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
+		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
+		this.lastOfferedSeq = offerSequence.get(); // FIXME: What does this return before initialization?
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
@@ -79,11 +107,11 @@ public class RingProducer<E extends MemorySerializable> {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
-	public Memory getMemory() {
+	public final Memory getMemory() {
 		return memory;
 	}
 	
-	private long calcTotalMemorySize(long capacity, int maxObjectSize) {
+	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
 		return HEADER_SIZE + capacity * maxObjectSize;
 	}
 
@@ -113,7 +141,7 @@ public class RingProducer<E extends MemorySerializable> {
 		return dataAddress + index * maxObjectSize;
 	}
 	
-	private int calcIndex(long value) {
+	private final int calcIndex(long value) {
 		if (isPowerOfTwo) {
 			return (int) (value & capacityMinusOne);
 		} else {
