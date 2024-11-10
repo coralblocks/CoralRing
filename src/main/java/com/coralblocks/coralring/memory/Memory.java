@@ -19,6 +19,8 @@ import java.nio.ByteBuffer;
 
 public interface Memory {
 	
+	public long getSize();
+	
 	public long getPointer();
 	
 	public void release(boolean deleteFileIfUsed);

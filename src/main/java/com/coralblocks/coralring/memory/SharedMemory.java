@@ -202,6 +202,11 @@ public class SharedMemory implements Memory {
 	}
 	
 	@Override
+	public long getSize() {
+		return size;
+	}
+	
+	@Override
 	public long getPointer() {
 		return pointer;
 	}
