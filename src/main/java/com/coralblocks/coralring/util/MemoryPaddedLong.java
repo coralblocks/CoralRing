@@ -19,9 +19,6 @@ import com.coralblocks.coralring.memory.Memory;
 
 public class MemoryPaddedLong {
 
-	//private static final int PADDING = 24;
-	private static final int DEFAULT_VALUE_OFFSET = 0;
-	
 	private final long address;
 	private final Memory memory;
 	private final int valueOffset;
@@ -35,14 +32,6 @@ public class MemoryPaddedLong {
 	
 	public MemoryPaddedLong(long address, int valueOffset, Memory memory) {
 		this(address, valueOffset, memory, null);
-	}
-	
-	public MemoryPaddedLong(long address, Memory memory) {
-		this(address, DEFAULT_VALUE_OFFSET, memory);
-	}
-	
-	public MemoryPaddedLong(long address, Memory memory, Long value) {
-		this(address, DEFAULT_VALUE_OFFSET, memory, value);
 	}
 	
 	public final void set(long value) {
