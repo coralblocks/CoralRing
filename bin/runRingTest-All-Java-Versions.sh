@@ -10,22 +10,26 @@ alias java23='sudo rm /Library/Java/JavaVirtualMachines/Default; sudo ln -sf /Li
 java16
 java -version
 
-./bin/runSharedMemoryTest.sh
+./bin/runRingProducer.sh &
+./bin/runRingConsumer.sh
 
 java17
 java -version
 
-./bin/runSharedMemoryTest.sh
+./bin/runRingProducer.sh &
+./bin/runRingConsumer.sh
 
 java21
 java -version
 
-./bin/runSharedMemoryTest.sh
+./bin/runRingProducer.sh &
+./bin/runRingConsumer.sh
 
 java23
 java -version
 
-./bin/runSharedMemoryTest.sh
+./bin/runRingProducer.sh &
+./bin/runRingConsumer.sh
 
 java16
 
