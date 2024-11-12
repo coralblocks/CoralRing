@@ -167,4 +167,8 @@ public class RingProducer<E extends MemorySerializable> {
 		dataList.clear();
 		offerSequence.set(lastOfferedSeq);
 	}
+	
+	public final void close(boolean deleteFileIfUsed) {
+		memory.release(deleteFileIfUsed);
+	}
 }

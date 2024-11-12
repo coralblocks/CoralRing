@@ -145,4 +145,8 @@ public class RingConsumer<E extends MemorySerializable> {
 		pollSequence.set(lastPolledSeq);
 		pollCount = 0;
 	}
+	
+	public final void close(boolean deleteFileIfUsed) {
+		memory.release(deleteFileIfUsed);
+	}
 }
