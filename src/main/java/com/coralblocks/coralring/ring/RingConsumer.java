@@ -115,18 +115,16 @@ public class RingConsumer<E extends MemorySerializable> {
 	public final E poll() {
 		pollCount++;
 		int index = calcIndex(lastPolledSeq++);
-		E obj = data;
 		long offset = calcDataOffset(index);
-		obj.readFrom(offset, memory);
-		return obj;
+		data.readFrom(offset, memory);
+		return data;
 	}
 	
 	public final E peek() {
 		int index = calcIndex(lastPolledSeq);
-		E obj = data;
 		long offset = calcDataOffset(index);
-		obj.readFrom(offset, memory);
-		return obj;
+		data.readFrom(offset, memory);
+		return data;
 	}
 
 	public final void rollback() {
