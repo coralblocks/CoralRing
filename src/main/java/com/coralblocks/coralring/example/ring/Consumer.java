@@ -28,11 +28,16 @@ public class Consumer {
 		final String filename = "shared-ring.mmap";
 		
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
+		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
 		final RingConsumer<Message> ring = new RingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
+		
+		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
+								+ " with sleepTime of " + sleepTime + " nanoseconds"
+								+ "...\n");
 		
 		boolean isRunning = true;
 		while(isRunning) {
@@ -45,6 +50,7 @@ public class Consumer {
 				}
 				ring.donePolling(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
+				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {
 				// busy spin while blocking (default and fastest wait strategy)
 				busySpinCount++; // save the number of busy-spins, just for extra info later
@@ -79,4 +85,9 @@ public class Consumer {
 		System.out.println("Number of batches received: " + batchesReceived.size());
 		System.out.println("Consumer busy-spin count: " + busySpinCount);
 	}
+	
+    private final static void sleepFor(long nanos) {
+        long time = System.nanoTime();
+        while((System.nanoTime() - time) < nanos);
+    }
 }
