@@ -133,7 +133,7 @@ public class RingProducer<E extends MemorySerializable> {
 			}
 		}
 		E obj = dataPool.get();
-		dataList.addLast(obj);
+		dataList.addFirst(obj);
 		return obj;
 	}
 	
