@@ -5,8 +5,8 @@ import com.coralblocks.coralring.util.MemorySerializable;
 
 public class Message implements MemorySerializable {
 	
-	long value; // 8 bytes
-	boolean last; // 1 byte
+	public long value; // 8 bytes
+	public boolean last; // 1 byte
 	
 	public final static int getMaxSize() {
 		return 8 + 1;
