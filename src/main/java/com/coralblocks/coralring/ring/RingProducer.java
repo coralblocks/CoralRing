@@ -89,7 +89,7 @@ public class RingProducer<E extends MemorySerializable> {
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
 		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
-		this.lastOfferedSeq = offerSequence.get(); // FIXME: What does this return before initialization?
+		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
