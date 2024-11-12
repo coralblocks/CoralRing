@@ -34,7 +34,9 @@ public class Producer {
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
 		
-		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages...\n");
+		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages"
+							+ " with sleepTime of " + sleepTime + " nanoseconds"
+							+ "...\n");
 		
 		Random rand = new Random();
 		
@@ -52,7 +54,7 @@ public class Producer {
 			}
 			ring.flush(); // <=========
 			remaining -= batchToSend;
-			sleepFor(sleepTime);
+			if (sleepTime > 0) sleepFor(sleepTime);
 		}
 		
 		System.out.println("Producer DONE!");
