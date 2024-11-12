@@ -16,7 +16,6 @@
 package com.coralblocks.coralring.example.ring;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.coralblocks.coralring.ring.RingConsumer;
@@ -65,15 +64,9 @@ public class Consumer {
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);
 		else System.out.println("ERROR: Wrong number of messages received! => " + messagesReceived.size());
 		
-		// Where there any duplicates?
-		if (messagesReceived.stream().distinct().count() == messagesReceived.size()) System.out.println("SUCCESS: No duplicate messages were received!");
-		else System.out.println("ERROR: Found duplicate messages!");
-		
-		// Were the messages received in order?
-		List<Long> sortedList = new ArrayList<Long>(messagesReceived);
-		Collections.sort(sortedList);
-		if (sortedList.equals(messagesReceived)) System.out.println("SUCCESS: Messages were received in order!");
-		else System.out.println("ERROR: Messages were received out of order!");
+		// Did we receive all messages correctly?
+		if (hasReceivedCorrectly(messagesReceived)) System.out.println("SUCCESS: Messages were received correctly!");
+		else System.out.println("ERROR: Messages were not received correctly!");
 		
 		// If we sum all batches received do we get the correct number of messages?
 		long sumOfAllBatches = batchesReceived.stream().mapToLong(Long::longValue).sum();
@@ -85,6 +78,18 @@ public class Consumer {
 		System.out.println("Number of batches received: " + batchesReceived.size());
 		System.out.println("Consumer busy-spin count: " + busySpinCount);
 	}
+	
+	private static boolean hasReceivedCorrectly(List<Long> list) {
+	    if (list == null || list.isEmpty()) return false;
+	    if (list.get(0) != 1) return false;
+	    for (int i = 1; i < list.size(); i++) {
+	        if (list.get(i - 1) != list.get(i) - 1) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+
 	
     private final static void sleepFor(long nanos) {
         long time = System.nanoTime();
