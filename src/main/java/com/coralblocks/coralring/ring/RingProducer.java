@@ -124,6 +124,7 @@ public class RingProducer<E extends MemorySerializable> {
 	}
 	
 	public final E nextToDispatch() {
+		
 		if (++lastOfferedSeq > maxSeqBeforeWrapping) {
 			// this would wrap the buffer... calculate the new one...
 			this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
@@ -132,8 +133,9 @@ public class RingProducer<E extends MemorySerializable> {
 				return null;				
 			}
 		}
+		
 		E obj = dataPool.get();
-		dataList.addFirst(obj);
+		dataList.addLast(obj);
 		return obj;
 	}
 	
@@ -151,20 +153,24 @@ public class RingProducer<E extends MemorySerializable> {
 	
 	public final void flush() {
 		
-		int i = 0;
+		long seq = lastOfferedSeq - dataList.size() + 1;
 		
 		Iterator<E> iter = dataList.iterator();
 		
 		while(iter.hasNext()) {
-			long seq = lastOfferedSeq - i;
-			int index = calcIndex(seq - 1);
-			E obj = iter.next();
+			
+			int index = calcIndex(seq);
 			long offset = calcDataOffset(index);
+			
+			E obj = iter.next();
 			obj.writeTo(offset, memory);
 			dataPool.release(obj);
-			i++;
+			
+			seq++;
 		}
+		
 		dataList.clear();
+		
 		offerSequence.set(lastOfferedSeq);
 	}
 	

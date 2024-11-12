@@ -114,7 +114,7 @@ public class RingConsumer<E extends MemorySerializable> {
 	
 	public final E poll() {
 		pollCount++;
-		int index = calcIndex(lastPolledSeq++);
+		int index = calcIndex(++lastPolledSeq);
 		long offset = calcDataOffset(index);
 		data.readFrom(offset, memory);
 		return data;
