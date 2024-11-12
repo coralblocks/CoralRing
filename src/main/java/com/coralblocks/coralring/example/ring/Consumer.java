@@ -27,7 +27,7 @@ public class Consumer {
 		
 		final String filename = "shared-ring.mmap";
 		
-		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 10_000;
+		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 
 		final RingConsumer<Message> ring = new RingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
@@ -77,7 +77,6 @@ public class Consumer {
 		System.out.println("\nMore info:\n");
 		
 		System.out.println("Number of batches received: " + batchesReceived.size());
-		System.out.println("Batches received: " + batchesReceived.toString());
 		System.out.println("Consumer busy-spin count: " + busySpinCount);
 	}
 }
