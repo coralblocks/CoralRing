@@ -15,6 +15,8 @@
  */
 package com.coralblocks.coralring.example.ring;
 
+import java.util.Random;
+
 import com.coralblocks.coralring.ring.RingProducer;
 
 public class Producer {
@@ -24,19 +26,21 @@ public class Producer {
 		final String filename = "shared-ring.mmap";
 		
 		final int messagesToSend = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
-		final int batchSizeToSend = args.length > 1 ? Integer.parseInt(args[1]) : 100;
-		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 10; // 10 millis
+		final int maxBatchSize = args.length > 1 ? Integer.parseInt(args[1]) : 100;
+		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 5; // 5 millis
 		
 		final RingProducer<Message> ring = new RingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 		
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
 		
-		System.out.println("Producer will send " + messagesToSend + " messages in batches of " + batchSizeToSend + " messages...\n");
+		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages...\n");
+		
+		Random rand = new Random();
 		
 		int remaining = messagesToSend;
 		while(remaining > 0) {
-			int batchToSend = Math.min(batchSizeToSend, remaining);
+			int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 			for(int i = 0; i < batchToSend; i++) {
 				Message m;
 				while((m = ring.nextToDispatch()) == null) { // <=========

@@ -2,7 +2,7 @@
 
 MESSAGES_TO_SEND=${1:-100000}
 BATCH_SIZE_TO_SEND=${2:-100}
-SLEEP_TIME=${3:-10000000}
+SLEEP_TIME=${3:-5000000}
 
 source ./bin/checkJvmVersion.sh
 
