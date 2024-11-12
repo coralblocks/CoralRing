@@ -21,24 +21,22 @@ public class MemoryPaddedLong {
 
 	private final long address;
 	private final Memory memory;
-	private final int valueOffset;
 	
-	public MemoryPaddedLong(long address, int valueOffset, Memory memory, Long value) {
+	public MemoryPaddedLong(long address, Memory memory, Long value) {
 		this.address = address;
-		this.valueOffset = valueOffset;
 		this.memory = memory;
 		if (value != null) set(value.longValue());
 	}
 	
-	public MemoryPaddedLong(long address, int valueOffset, Memory memory) {
-		this(address, valueOffset, memory, null);
+	public MemoryPaddedLong(long address,  Memory memory) {
+		this(address, memory, null);
 	}
 	
 	public final void set(long value) {
-		memory.putLongVolatile(address, value + valueOffset);
+		memory.putLongVolatile(address, value);
 	}
 	
 	public final long get() {
-		return memory.getLongVolatile(address) - valueOffset;
+		return memory.getLongVolatile(address);
 	}
 }

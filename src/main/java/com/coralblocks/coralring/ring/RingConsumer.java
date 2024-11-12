@@ -36,11 +36,6 @@ public class RingConsumer<E extends MemorySerializable> {
 	// Two cache lines, one for each sequence number
 	private final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
 	
-	// The sequence value will be stored in memory with this offset
-	// Why? This make the code cleaner and easier to understand when
-	// producer and consumer are accessing each other's sequences.
-	private final static int SEQ_VALUE_OFFSET = 1;
-
 	private final int capacity;
 	private final int capacityMinusOne;
 	private final E data;
@@ -66,8 +61,8 @@ public class RingConsumer<E extends MemorySerializable> {
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
-		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, SEQ_VALUE_OFFSET, memory);
+		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
+		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastPolledSeq = pollSequence.get();
 		this.data = builder.newInstance();
 	}
