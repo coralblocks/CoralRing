@@ -15,6 +15,11 @@
  */
 package com.coralblocks.coralring.ring;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Iterator;
 
 import com.coralblocks.coralring.memory.Memory;
@@ -34,6 +39,7 @@ import com.coralblocks.coralring.util.ObjectPool;
  * </p>
  * <p>
  * The shared memory allocated for the ring contains a header space where the producer and consumer sequence numbers are kept and maintained for mutual access.
+ * We also keep in the header two ints: one for the ring capacity and one for the max object size.
  * A memory barrier is implemented through the {@link MemoryPaddedLong} class, which uses the <code>putVolatile</code> and <code>getVolatile</code> native memory operations.
  * </p>
  * <p>
@@ -46,16 +52,16 @@ import com.coralblocks.coralring.util.ObjectPool;
 public class RingProducer<E extends MemorySerializable> {
 	
 	// The default capacity for this shared memory ring
-	private final static int DEFAULT_CAPACITY = 1024;
+	final static int DEFAULT_CAPACITY = 1024;
 	
 	// So that the sequence lands in the middle of the cache line
-	private final static int SEQ_PREFIX_PADDING = 24;
+	final static int SEQ_PREFIX_PADDING = 24;
 
 	// A typical CPU cache line
-	private final static int CPU_CACHE_LINE = 64;
+	final static int CPU_CACHE_LINE = 64;
 	
-	// Two cache lines, one for each sequence number
-	private final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
+	// Two cache lines, one for each sequence number plus two ints (capacity and max object size)
+	final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE + 4 + 4;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -77,9 +83,15 @@ public class RingProducer<E extends MemorySerializable> {
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
 		this.maxObjectSize = maxObjectSize;
+		boolean fileExists = validateHeaderValues(filename, capacity, maxObjectSize);
 		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize);
+		if (fileExists) validateFileLength(filename, totalMemorySize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
+		if (!fileExists) {
+			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, capacity);
+			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, maxObjectSize);
+		}
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
@@ -102,6 +114,64 @@ public class RingProducer<E extends MemorySerializable> {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
+	/*
+	 * Return true if the file exists
+	 */
+	private static boolean validateHeaderValues(String filename, int capacity, int maxObjectSize) {
+		int[] headerValues = getHeaderValuesIfFileExists(filename);
+		if (headerValues != null) {
+			if (capacity != headerValues[0]) {
+				throw new RuntimeException("The provided capacity does not match the one in the header of the file!"
+								+ " capacity=" + capacity + " header=" + headerValues[0]);
+			}
+			if (maxObjectSize != headerValues[1]) {
+				throw new RuntimeException("The provided maxObjectSize does not match the one in the header of the file!"
+						+ " maxObjectSize=" + maxObjectSize + " header=" + headerValues[1]);
+				
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	static void validateFileLength(String filename, long fileLength) {
+		File file = new File(filename);
+		if (!file.exists() || file.isDirectory()) throw new RuntimeException("File does not exist: " + filename);
+		if (file.length() != fileLength) {
+			throw new RuntimeException("File length does not match!"
+							+ " fileLength=" + file.length() + " expected=" + fileLength);
+		}
+	}
+	
+	/*
+	 * This method tries to recover the capacity and the max object size from the header in the file
+	 * It returns null if and only if the file does not exist
+	 * It can throw a RuntimeException if there is an IOException or any other problem
+	 * The first int in the array is the capacity. The second one is the max object size.
+	 */
+	static int[] getHeaderValuesIfFileExists(String filename) {
+		File file = new File(filename);
+		if (!file.exists() || file.isDirectory()) return null;
+		if (file.length() < HEADER_SIZE) throw new RuntimeException("File does not contain the full header: " + filename);
+		byte[] header = new byte[HEADER_SIZE];
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(file);
+			int bytesRead = fis.read(header);
+			if (bytesRead != header.length) throw new IOException("Cannot read header data from file: " + filename);
+			ByteBuffer bb = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
+			bb.position(2 * CPU_CACHE_LINE);
+			int[] ret = new int[2];
+			ret[0] = bb.getInt();
+			ret[1] = bb.getInt();
+			return ret;
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			if (fis != null) try { fis.close(); } catch(IOException e) { throw new RuntimeException(e); }
+		}
+	}
+	
 	public final long getLastOfferedSequence() {
 		return lastOfferedSeq;
 	}
@@ -110,7 +180,7 @@ public class RingProducer<E extends MemorySerializable> {
 		return memory;
 	}
 	
-	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
+	private final static long calcTotalMemorySize(long capacity, int maxObjectSize) {
 		return HEADER_SIZE + capacity * maxObjectSize;
 	}
 

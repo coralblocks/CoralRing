@@ -25,16 +25,16 @@ import com.coralblocks.coralring.util.MemorySerializable;
 public class RingConsumer<E extends MemorySerializable> {
 	
 	// The default capacity for this shared memory ring
-	private final static int DEFAULT_CAPACITY = 1024;
+	private final static int DEFAULT_CAPACITY = RingProducer.DEFAULT_CAPACITY;
 	
 	// So that the sequence lands in the middle of the cache line
-	private final static int SEQ_PREFIX_PADDING = 24;
+	private final static int SEQ_PREFIX_PADDING = RingProducer.SEQ_PREFIX_PADDING;
 
 	// A typical CPU cache line
-	private final static int CPU_CACHE_LINE = 64;
+	private final static int CPU_CACHE_LINE = RingProducer.CPU_CACHE_LINE;
 	
 	// Two cache lines, one for each sequence number
-	private final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
+	private final static int HEADER_SIZE = RingProducer.HEADER_SIZE;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -52,13 +52,51 @@ public class RingConsumer<E extends MemorySerializable> {
 	private final Builder<E> builder;
 
 	public RingConsumer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
+		
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
-		this.capacity = capacity;
-		this.capacityMinusOne = capacity - 1;
-		this.maxObjectSize = maxObjectSize;
-		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize);
+		
+		int[] headerValues = RingProducer.getHeaderValuesIfFileExists(filename);
+		
+		boolean fileExists = headerValues != null;
+		
+		if (fileExists) {
+			if (capacity == -1) {
+				this.capacity = headerValues[0];
+			} else {
+				if (capacity != headerValues[0]) throw new RuntimeException("Capacity provided does not match file!"
+														+ " provided=" + capacity + " expected=" + headerValues[0]);
+				this.capacity = capacity;
+			}
+			if (maxObjectSize == -1) {
+				this.maxObjectSize = headerValues[1];
+			} else {
+				if (maxObjectSize != headerValues[1]) throw new RuntimeException("Max object size provided does not match file!"
+														+ " provided=" + maxObjectSize + " expected=" + headerValues[1]);
+				this.maxObjectSize = maxObjectSize;
+			}
+		} else { // file does not exist
+			
+			if (capacity == -1) throw new RuntimeException("File does not exist but capacity was not provided!");
+			if (maxObjectSize == -1) throw new RuntimeException("File does not exist but max object size was not provided!");
+			
+			this.capacity = capacity;
+			this.maxObjectSize = maxObjectSize;
+		}
+		
+		this.capacityMinusOne = this.capacity - 1;
+		
+		long totalMemorySize = calcTotalMemorySize(this.capacity, this.maxObjectSize);
+		
+		if (fileExists) RingProducer.validateFileLength(filename, totalMemorySize);
+		
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
+		
+		if (!fileExists) {
+			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, this.capacity);
+			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, this.maxObjectSize);
+		}
+		
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
