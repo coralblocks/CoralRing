@@ -35,7 +35,7 @@ public class Consumer {
 		long busySpinCount = 0;
 		
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
-								+ " with sleepTime of " + sleepTime + " nanoseconds"
+								+ " with sleepTime of " + sleepTime + " nanoseconds (lastPolledSeq=" + ring.getLastPolledSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;

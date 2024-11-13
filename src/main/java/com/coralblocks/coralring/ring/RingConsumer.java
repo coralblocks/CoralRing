@@ -79,6 +79,10 @@ public class RingConsumer<E extends MemorySerializable> {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
+	public final long getLastPolledSequence() {
+		return lastPolledSeq;
+	}
+	
 	public final Memory getMemory() {
 		return memory;
 	}

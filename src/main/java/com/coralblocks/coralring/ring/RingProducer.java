@@ -102,6 +102,10 @@ public class RingProducer<E extends MemorySerializable> {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
+	public final long getLastOfferedSequence() {
+		return lastOfferedSeq;
+	}
+	
 	public final Memory getMemory() {
 		return memory;
 	}

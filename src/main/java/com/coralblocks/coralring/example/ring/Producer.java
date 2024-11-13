@@ -35,7 +35,7 @@ public class Producer {
 		long busySpinCount = 0;
 		
 		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages"
-							+ " with sleepTime of " + sleepTime + " nanoseconds"
+							+ " with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ring.getLastOfferedSequence() + ")"
 							+ "...\n");
 		
 		Random rand = new Random();
