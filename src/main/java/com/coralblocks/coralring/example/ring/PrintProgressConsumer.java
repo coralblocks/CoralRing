@@ -24,8 +24,12 @@ public class PrintProgressConsumer {
 		final String filename = "shared-ring-prog.mmap";
 		
 		final int sleepTime = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000_000; // 1s
+		final boolean implyFromFile = args.length > 1 ? Boolean.parseBoolean(args[1]) : false;
+		
+		int capacity = implyFromFile ? -1 : 8;
+		int maxObjectSize = implyFromFile ? -1 : Message.getMaxSize();
 
-		final RingConsumer<Message> ring = new RingConsumer<Message>(8, Message.getMaxSize(), Message.class, filename);
+		final RingConsumer<Message> ring = new RingConsumer<Message>(capacity, maxObjectSize, Message.class, filename);
 		
 		System.out.println("Consumer started! lastPolledSeq=" + ring.getLastPolledSequence() + "\n");
 		
