@@ -24,16 +24,12 @@ import com.coralblocks.coralring.util.MemorySerializable;
 
 public class RingConsumer<E extends MemorySerializable> {
 	
-	// The default capacity for this shared memory ring
 	private final static int DEFAULT_CAPACITY = RingProducer.DEFAULT_CAPACITY;
 	
-	// So that the sequence lands in the middle of the cache line
 	private final static int SEQ_PREFIX_PADDING = RingProducer.SEQ_PREFIX_PADDING;
 
-	// A typical CPU cache line
 	private final static int CPU_CACHE_LINE = RingProducer.CPU_CACHE_LINE;
 	
-	// Two cache lines, one for each sequence number
 	private final static int HEADER_SIZE = RingProducer.HEADER_SIZE;
 	
 	private final int capacity;
