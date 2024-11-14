@@ -46,7 +46,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				
-				final RingProducer<Message> ring = new RingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+				final BlockingRingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				int idToSend = 1; // each message from this producer will contain an unique value (id)
 				
@@ -77,7 +77,7 @@ public class RingTest {
 			@Override
 			public void run() {
 				
-				final RingConsumer<Message> ring = new RingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+				final BlockingRingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				boolean isRunning = true;
 				while(isRunning) {

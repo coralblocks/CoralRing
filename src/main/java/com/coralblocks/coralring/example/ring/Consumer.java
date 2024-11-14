@@ -18,7 +18,7 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coralblocks.coralring.ring.RingConsumer;
+import com.coralblocks.coralring.ring.BlockingRingConsumer;
 
 public class Consumer {
 	
@@ -29,7 +29,7 @@ public class Consumer {
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
-		final RingConsumer<Message> ring = new RingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+		final BlockingRingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;

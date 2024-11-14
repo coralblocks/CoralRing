@@ -17,7 +17,7 @@ package com.coralblocks.coralring.example.ring;
 
 import java.util.Random;
 
-import com.coralblocks.coralring.ring.RingProducer;
+import com.coralblocks.coralring.ring.BlockingRingProducer;
 
 public class PrintProgressProducer {
 	
@@ -27,7 +27,7 @@ public class PrintProgressProducer {
 		
 		final int sleepTime = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000_000; // 1s
 		
-		final RingProducer<Message> ring = new RingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
+		final BlockingRingProducer<Message> ring = new BlockingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
 		
 		long idToSend = ring.getLastOfferedSequence() + 1;
 		
