@@ -12,8 +12,6 @@ public interface RingConsumer<E extends MemorySerializable> {
 	
 	public long getLastPolledSequence();
 	
-	//TODO: public E getSequence(long sequence);
-	
 	public long availableToPoll();
 	
 	public E poll();
