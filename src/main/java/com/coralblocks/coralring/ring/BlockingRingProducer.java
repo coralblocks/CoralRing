@@ -55,8 +55,8 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	// A typical CPU cache line
 	final static int CPU_CACHE_LINE = 64;
 	
-	// Two cache lines, one for each sequence number plus two ints (capacity and max object size)
-	final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE + 4 + 4;
+	// Two cache lines, one for each sequence number
+	final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -81,8 +81,6 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
-		this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, capacity);
-		this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, maxObjectSize);
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
