@@ -243,4 +243,18 @@ public class NonBlockingRingTest {
 		ringProducer.close(false);
 		ringConsumer.close(true);
 	}
+	
+	@Test
+	public void testFindingCapacity() {
+		
+		final String filename = "test-ring-capacity.mmap";
+		
+		final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename);
+		final RingConsumer<Message> ringConsumer = new BlockingRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename);
+		
+		Assert.assertEquals(ringProducer.getCapacity(), ringConsumer.getCapacity());
+		
+		ringProducer.close(false);
+		ringConsumer.close(true);
+	}
 }

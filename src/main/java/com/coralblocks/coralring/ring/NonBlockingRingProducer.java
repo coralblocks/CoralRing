@@ -54,7 +54,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	private final LinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 
-    public NonBlockingRingProducer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
+    public NonBlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -101,6 +101,11 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	@Override
 	public final Builder<E> getBuilder() {
 		return builder;
+	}
+	
+	@Override
+	public final int getCapacity() {
+		return capacity;
 	}
 	
 	@Override

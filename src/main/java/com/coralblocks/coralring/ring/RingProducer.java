@@ -8,6 +8,8 @@ public interface RingProducer<E extends MemorySerializable> {
 	
 	public Memory getMemory();
 	
+	public int getCapacity();
+	
 	public Builder<E> getBuilder();
 	
 	public long getLastOfferedSequence();

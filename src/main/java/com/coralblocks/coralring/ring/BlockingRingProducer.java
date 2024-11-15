@@ -73,7 +73,7 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	private final LinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 
-    public BlockingRingProducer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
+    public BlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -113,6 +113,11 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	@Override
 	public final Memory getMemory() {
 		return memory;
+	}
+	
+	@Override
+	public final int getCapacity() {
+		return capacity;
 	}
 	
 	private final static long calcTotalMemorySize(long capacity, int maxObjectSize) {

@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import sun.misc.Unsafe;
 import sun.nio.ch.FileChannelImpl;
 
-@SuppressWarnings("restriction")
 public class SharedMemory implements Memory {
 	
 	// Long.MAX_VALUE = 9,223,372,036,854,775,807 bytes

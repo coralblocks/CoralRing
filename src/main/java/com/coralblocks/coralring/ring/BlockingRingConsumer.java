@@ -15,6 +15,8 @@
  */
 package com.coralblocks.coralring.ring;
 
+import java.io.File;
+
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
@@ -47,12 +49,12 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	
 	private final Builder<E> builder;
 
-	public BlockingRingConsumer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
-		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
-		this.capacity = capacity;
+	public BlockingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
+		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
+		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
 		this.maxObjectSize = maxObjectSize;
-		long totalMemorySize = calcTotalMemorySize(this.capacity, this.maxObjectSize);
+		long totalMemorySize = calcTotalMemorySize(this.capacity, maxObjectSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
@@ -88,10 +90,26 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
 		return HEADER_SIZE + capacity * maxObjectSize;
 	}
+	
+	private final int findCapacityFromFile(String filename, int maxObjectSize) {
+		File file = new File(filename);
+		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
+		long totalMemorySize = file.length();
+		return calcCapacity(totalMemorySize, maxObjectSize);
+	}
+	
+	private final int calcCapacity(long totalMemorySize, int maxObjectSize) {
+		return (int) ((totalMemorySize - HEADER_SIZE) / maxObjectSize);
+	}
 
 	@Override
 	public final Builder<E> getBuilder() {
 		return builder;
+	}
+	
+	@Override
+	public final int getCapacity() {
+		return capacity;
 	}
 	
 	@Override

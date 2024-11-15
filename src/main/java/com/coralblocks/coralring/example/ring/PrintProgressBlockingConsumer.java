@@ -28,9 +28,8 @@ public class PrintProgressBlockingConsumer {
 		final boolean implyFromFile = args.length > 1 ? Boolean.parseBoolean(args[1]) : false;
 		
 		int capacity = implyFromFile ? -1 : 8;
-		int maxObjectSize = implyFromFile ? -1 : Message.getMaxSize();
 
-		final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(capacity, maxObjectSize, Message.class, filename);
+		final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(capacity, Message.getMaxSize(), Message.class, filename);
 		
 		System.out.println("Consumer started! lastPolledSeq=" + ring.getLastPolledSequence() + "\n");
 		
