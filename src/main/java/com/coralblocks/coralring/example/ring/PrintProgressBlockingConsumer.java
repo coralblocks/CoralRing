@@ -29,17 +29,17 @@ public class PrintProgressBlockingConsumer {
 		
 		int capacity = implyFromFile ? -1 : 8;
 
-		final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(capacity, Message.getMaxSize(), Message.class, filename);
+		final RingConsumer<Message> ringConsumer = new BlockingRingConsumer<Message>(capacity, Message.getMaxSize(), Message.class, filename);
 		
-		System.out.println("Consumer started! lastPolledSeq=" + ring.getLastPolledSequence() + "\n");
+		System.out.println("Consumer started! lastPolledSeq=" + ringConsumer.getLastPolledSequence() + "\n");
 		
 		boolean first = true;
 		
 		while(true) {
-			long avail = ring.availableToPoll(); // <=========
+			long avail = ringConsumer.availableToPoll(); // <=========
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
-					Message m = ring.poll(); // <=========
+					Message m = ringConsumer.poll(); // <=========
 					if (first) {
 						first = false;
 					} else {
@@ -48,7 +48,7 @@ public class PrintProgressBlockingConsumer {
 					System.out.print(m.value);
 					sleepFor(sleepTime);
 				}
-				ring.donePolling(); // <=========
+				ringConsumer.donePolling(); // <=========
 				sleepFor(sleepTime);
 			} else {
 				// busy spin while blocking (default and fastest wait strategy)

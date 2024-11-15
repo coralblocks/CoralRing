@@ -30,25 +30,25 @@ public class BlockingConsumer {
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
-		final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+		final RingConsumer<Message> ringConsumer = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
 		
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
-								+ " with sleepTime of " + sleepTime + " nanoseconds (lastPolledSeq=" + ring.getLastPolledSequence() + ")"
+								+ " with sleepTime of " + sleepTime + " nanoseconds (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
 		while(isRunning) {
-			long avail = ring.availableToPoll(); // <=========
+			long avail = ringConsumer.availableToPoll(); // <=========
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
-					Message m = ring.poll(); // <=========
+					Message m = ringConsumer.poll(); // <=========
 					messagesReceived.add(m.value); // save just the long value from this message
 					if (m.last) isRunning = false; // I'm done!
 				}
-				ring.donePolling(); // <=========
+				ringConsumer.donePolling(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {
@@ -59,7 +59,7 @@ public class BlockingConsumer {
 		
 		System.out.println("Consumer DONE!");
 		
-		ring.close(true); // delete file
+		ringConsumer.close(true); // delete file
 		
 		// Did we receive all messages?
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);

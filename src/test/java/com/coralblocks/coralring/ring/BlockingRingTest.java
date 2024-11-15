@@ -46,7 +46,7 @@ public class BlockingRingTest {
 			@Override
 			public void run() {
 				
-				final RingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+				final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				int idToSend = 1; // each message from this producer will contain an unique value (id)
 				
@@ -57,17 +57,17 @@ public class BlockingRingTest {
 					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 					for(int i = 0; i < batchToSend; i++) {
 						Message m;
-						while((m = ring.nextToDispatch()) == null) { // <=========
+						while((m = ringProducer.nextToDispatch()) == null) { // <=========
 							// busy spin while blocking (default and fastest wait strategy)
 						}
 						m.value = idToSend++; // sending an unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
-					ring.flush(); // <=========
+					ringProducer.flush(); // <=========
 					remaining -= batchToSend;
 				}
 				
-				ring.close(false); // don't delete file, consumer might still be reading it
+				ringProducer.close(false); // don't delete file, consumer might still be reading it
 			}
 			
 		}, "RingProducer");
@@ -77,25 +77,25 @@ public class BlockingRingTest {
 			@Override
 			public void run() {
 				
-				final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+				final RingConsumer<Message> ringConsumer = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				boolean isRunning = true;
 				while(isRunning) {
-					long avail = ring.availableToPoll(); // <=========
+					long avail = ringConsumer.availableToPoll(); // <=========
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
-							Message m = ring.poll(); // <=========
+							Message m = ringConsumer.poll(); // <=========
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
-						ring.donePolling(); // <=========
+						ringConsumer.donePolling(); // <=========
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while blocking (default and fastest wait strategy)
 					}
 				}	
 				
-				ring.close(true); // delete the file
+				ringConsumer.close(true); // delete the file
 			}
 			
 		}, "RingConsumer");

@@ -28,11 +28,11 @@ public class PrintProgressBlockingProducer {
 		
 		final int sleepTime = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000_000; // 1s
 		
-		final RingProducer<Message> ring = new BlockingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
+		final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
 		
-		long idToSend = ring.getLastOfferedSequence() + 1;
+		long idToSend = ringProducer.getLastOfferedSequence() + 1;
 		
-		System.out.println("Producer started! lastOfferedSeq=" + ring.getLastOfferedSequence() + "\n");
+		System.out.println("Producer started! lastOfferedSeq=" + ringProducer.getLastOfferedSequence() + "\n");
 		
 		Random rand = new Random();
 		
@@ -44,7 +44,7 @@ public class PrintProgressBlockingProducer {
 			
 			for(int i = 0; i < batchToSend; i++) {
 				Message m;
-				while((m = ring.nextToDispatch()) == null) { // <=========
+				while((m = ringProducer.nextToDispatch()) == null) { // <=========
 					// busy spin while blocking (default and fastest wait strategy)
 				}
 				m.value = idToSend++; // sending an unique value so the messages sent are unique
@@ -56,7 +56,7 @@ public class PrintProgressBlockingProducer {
 				System.out.print(m.value);
 				sleepFor(sleepTime);
 			}
-			ring.flush(); // <=========
+			ringProducer.flush(); // <=========
 			sleepFor(sleepTime);
 		}
 	}

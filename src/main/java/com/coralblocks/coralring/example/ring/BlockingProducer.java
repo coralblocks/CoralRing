@@ -30,13 +30,13 @@ public class BlockingProducer {
 		final int maxBatchSize = args.length > 1 ? Integer.parseInt(args[1]) : 100;
 		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 5; // 5 millis
 		
-		final RingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+		final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 		
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
 		
 		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages"
-							+ " with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ring.getLastOfferedSequence() + ")"
+							+ " with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ringProducer.getLastOfferedSequence() + ")"
 							+ "...\n");
 		
 		Random rand = new Random();
@@ -46,21 +46,21 @@ public class BlockingProducer {
 			int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 			for(int i = 0; i < batchToSend; i++) {
 				Message m;
-				while((m = ring.nextToDispatch()) == null) { // <=========
+				while((m = ringProducer.nextToDispatch()) == null) { // <=========
 					// busy spin while blocking (default and fastest wait strategy)
 					busySpinCount++;
 				}
 				m.value = idToSend++; // sending an unique value so the messages sent are unique
 				m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 			}
-			ring.flush(); // <=========
+			ringProducer.flush(); // <=========
 			remaining -= batchToSend;
 			if (sleepTime > 0) sleepFor(sleepTime);
 		}
 		
 		System.out.println("Producer DONE!");
 		
-		ring.close(false); // don't delete file, consumer might still be reading it
+		ringProducer.close(false); // don't delete file, consumer might still be reading it
 		
 		System.out.println("Producer busy-spin count: " + busySpinCount);
 	}
