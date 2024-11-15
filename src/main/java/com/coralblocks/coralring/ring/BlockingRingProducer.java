@@ -145,20 +145,20 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	
 	/*
 	 * This method tries to recover the capacity and the max object size from the header in the file
-	 * It returns null if and only if the file does not exist
+	 * It returns null if the file does not exist. It also returns null if header is unavailable
 	 * It can throw a RuntimeException if there is an IOException or any other problem
 	 * The first int in the array is the capacity. The second one is the max object size.
 	 */
 	static int[] getHeaderValuesIfFileExists(String filename) {
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) return null;
-		if (file.length() < HEADER_SIZE) throw new RuntimeException("File does not contain the full header: " + filename);
+		if (file.length() < HEADER_SIZE) return null;
 		byte[] header = new byte[HEADER_SIZE];
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(file);
 			int bytesRead = fis.read(header);
-			if (bytesRead != header.length) throw new IOException("Cannot read header data from file: " + filename);
+			if (bytesRead != header.length) return null;
 			ByteBuffer bb = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
 			bb.position(2 * CPU_CACHE_LINE);
 			int[] ret = new int[2];
