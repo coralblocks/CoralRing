@@ -33,7 +33,7 @@ public class BlockingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-ring.mmap";
+		final String filename = "test-blocking-ring.mmap";
 		
 		final int messagesToSend = 1_000_000;
 		final int maxBatchSize = 100;
@@ -46,7 +46,7 @@ public class BlockingRingTest {
 			@Override
 			public void run() {
 				
-				final BlockingRingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+				final RingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				int idToSend = 1; // each message from this producer will contain an unique value (id)
 				
@@ -77,7 +77,7 @@ public class BlockingRingTest {
 			@Override
 			public void run() {
 				
-				final BlockingRingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+				final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
 				
 				boolean isRunning = true;
 				while(isRunning) {
