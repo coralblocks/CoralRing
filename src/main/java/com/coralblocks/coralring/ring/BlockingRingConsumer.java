@@ -48,51 +48,13 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	private final Builder<E> builder;
 
 	public BlockingRingConsumer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
-		
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
-		
-		int[] headerValues = BlockingRingProducer.getHeaderValuesIfFileExists(filename);
-		
-		boolean fileExists = headerValues != null;
-		
-		if (fileExists) {
-			if (capacity == -1) {
-				this.capacity = headerValues[0];
-			} else {
-				if (capacity != headerValues[0]) throw new RuntimeException("Capacity provided does not match file!"
-														+ " provided=" + capacity + " expected=" + headerValues[0]);
-				this.capacity = capacity;
-			}
-			if (maxObjectSize == -1) {
-				this.maxObjectSize = headerValues[1];
-			} else {
-				if (maxObjectSize != headerValues[1]) throw new RuntimeException("Max object size provided does not match file!"
-														+ " provided=" + maxObjectSize + " expected=" + headerValues[1]);
-				this.maxObjectSize = maxObjectSize;
-			}
-		} else { // file does not exist
-			
-			if (capacity == -1) throw new RuntimeException("File does not exist but capacity was not provided!");
-			if (maxObjectSize == -1) throw new RuntimeException("File does not exist but max object size was not provided!");
-			
-			this.capacity = capacity;
-			this.maxObjectSize = maxObjectSize;
-		}
-		
+		this.capacity = capacity;
 		this.capacityMinusOne = this.capacity - 1;
-		
+		this.maxObjectSize = maxObjectSize;
 		long totalMemorySize = calcTotalMemorySize(this.capacity, this.maxObjectSize);
-		
-		if (fileExists) BlockingRingProducer.validateFileLength(filename, totalMemorySize);
-		
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
-		
-		if (!fileExists) {
-			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, this.capacity);
-			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, this.maxObjectSize);
-		}
-		
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);

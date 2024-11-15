@@ -15,11 +15,6 @@
  */
 package com.coralblocks.coralring.ring;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Iterator;
 
 import com.coralblocks.coralring.memory.Memory;
@@ -83,15 +78,11 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
 		this.maxObjectSize = maxObjectSize;
-		boolean fileExists = validateHeaderValues(filename, capacity, maxObjectSize);
 		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize);
-		if (fileExists) validateFileLength(filename, totalMemorySize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
-		if (!fileExists) {
-			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, capacity);
-			this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, maxObjectSize);
-		}
+		this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE, capacity);
+		this.memory.putInt(headerAddress + 2 * CPU_CACHE_LINE + 4, maxObjectSize);
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
@@ -112,64 +103,6 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	
 	public BlockingRingProducer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
-	}
-	
-	/*
-	 * Return true if the file exists
-	 */
-	private static boolean validateHeaderValues(String filename, int capacity, int maxObjectSize) {
-		int[] headerValues = getHeaderValuesIfFileExists(filename);
-		if (headerValues != null) {
-			if (capacity != headerValues[0]) {
-				throw new RuntimeException("The provided capacity does not match the one in the header of the file!"
-								+ " capacity=" + capacity + " header=" + headerValues[0]);
-			}
-			if (maxObjectSize != headerValues[1]) {
-				throw new RuntimeException("The provided maxObjectSize does not match the one in the header of the file!"
-						+ " maxObjectSize=" + maxObjectSize + " header=" + headerValues[1]);
-				
-			}
-			return true;
-		}
-		return false;
-	}
-	
-	static void validateFileLength(String filename, long fileLength) {
-		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) throw new RuntimeException("File does not exist: " + filename);
-		if (file.length() != fileLength) {
-			throw new RuntimeException("File length does not match!"
-							+ " fileLength=" + file.length() + " expected=" + fileLength);
-		}
-	}
-	
-	/*
-	 * This method tries to recover the capacity and the max object size from the header in the file
-	 * It returns null if the file does not exist. It also returns null if header is unavailable
-	 * It can throw a RuntimeException if there is an IOException or any other problem
-	 * The first int in the array is the capacity. The second one is the max object size.
-	 */
-	static int[] getHeaderValuesIfFileExists(String filename) {
-		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) return null;
-		if (file.length() < HEADER_SIZE) return null;
-		byte[] header = new byte[HEADER_SIZE];
-		FileInputStream fis = null;
-		try {
-			fis = new FileInputStream(file);
-			int bytesRead = fis.read(header);
-			if (bytesRead != header.length) return null;
-			ByteBuffer bb = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN);
-			bb.position(2 * CPU_CACHE_LINE);
-			int[] ret = new int[2];
-			ret[0] = bb.getInt();
-			ret[1] = bb.getInt();
-			return ret;
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			if (fis != null) try { fis.close(); } catch(IOException e) { throw new RuntimeException(e); }
-		}
 	}
 	
 	@Override
