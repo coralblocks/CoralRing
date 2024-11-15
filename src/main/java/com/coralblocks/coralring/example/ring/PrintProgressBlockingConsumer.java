@@ -16,8 +16,9 @@
 package com.coralblocks.coralring.example.ring;
 
 import com.coralblocks.coralring.ring.BlockingRingConsumer;
+import com.coralblocks.coralring.ring.RingConsumer;
 
-public class PrintProgressConsumer {
+public class PrintProgressBlockingConsumer {
 	
 	public static void main(String[] args) {
 		
@@ -29,7 +30,7 @@ public class PrintProgressConsumer {
 		int capacity = implyFromFile ? -1 : 8;
 		int maxObjectSize = implyFromFile ? -1 : Message.getMaxSize();
 
-		final BlockingRingConsumer<Message> ring = new BlockingRingConsumer<Message>(capacity, maxObjectSize, Message.class, filename);
+		final RingConsumer<Message> ring = new BlockingRingConsumer<Message>(capacity, maxObjectSize, Message.class, filename);
 		
 		System.out.println("Consumer started! lastPolledSeq=" + ring.getLastPolledSequence() + "\n");
 		

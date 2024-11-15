@@ -18,8 +18,9 @@ package com.coralblocks.coralring.example.ring;
 import java.util.Random;
 
 import com.coralblocks.coralring.ring.BlockingRingProducer;
+import com.coralblocks.coralring.ring.RingProducer;
 
-public class Producer {
+public class BlockingProducer {
 	
 	public static void main(String[] args) {
 		
@@ -29,7 +30,7 @@ public class Producer {
 		final int maxBatchSize = args.length > 1 ? Integer.parseInt(args[1]) : 100;
 		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 5; // 5 millis
 		
-		final BlockingRingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+		final RingProducer<Message> ring = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 		
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
