@@ -107,19 +107,19 @@ public class NonBlockingRingTest {
 		consumer.join();
 		
 		// Did we receive all messages?
-		Assert.assertEquals(messagesReceived.size(), messagesToSend);
+		Assert.assertEquals(messagesToSend, messagesReceived.size());
 		
 		// Where there any duplicates?
-		Assert.assertEquals(messagesReceived.stream().distinct().count(), messagesReceived.size());
+		Assert.assertEquals(messagesReceived.size(), messagesReceived.stream().distinct().count());
 		
 		// Were the messages received in order?
 		List<Long> sortedList = new ArrayList<Long>(messagesReceived);
 		Collections.sort(sortedList);
-		Assert.assertEquals(sortedList, messagesReceived);
+		Assert.assertEquals(messagesReceived, sortedList);
 		
 		// If we sum all batches received do we get the correct number of messages?
 		long sumOfAllBatches = batchesReceived.stream().mapToLong(Long::longValue).sum();
-		Assert.assertEquals(sumOfAllBatches, messagesToSend);
+		Assert.assertEquals(messagesToSend, sumOfAllBatches);
 	}
 	
 	@Test
@@ -170,7 +170,7 @@ public class NonBlockingRingTest {
 		long avail = ringConsumer.availableToPoll();
 		ringConsumer.close(true); // delete file
 		
-		Assert.assertEquals(avail, -1); // wrapped
+		Assert.assertEquals(-1, avail); // wrapped
 	}
 	
 	@Test
@@ -196,7 +196,7 @@ public class NonBlockingRingTest {
 		
 		long avail = ringConsumer.availableToPoll();
 		
-		Assert.assertEquals(avail, 4);
+		Assert.assertEquals(4, avail);
 		
 		for(int i = 0; i < 4; i++) {
 			m = ringConsumer.poll();
@@ -215,7 +215,7 @@ public class NonBlockingRingTest {
 		
 		avail = ringConsumer.availableToPoll();
 		
-		Assert.assertEquals(avail, 8);
+		Assert.assertEquals(8, avail);
 		
 		for(int i = 0; i < 8; i++) {
 			m = ringConsumer.poll();
@@ -226,7 +226,7 @@ public class NonBlockingRingTest {
 		
 		avail = ringConsumer.availableToPoll();
 		
-		Assert.assertEquals(avail, 0); // empty
+		Assert.assertEquals(0, avail); // empty
 		
 		// now wrap
 		
@@ -238,7 +238,7 @@ public class NonBlockingRingTest {
 		
 		avail = ringConsumer.availableToPoll();
 		
-		Assert.assertEquals(avail, -1); // wrapped
+		Assert.assertEquals(-1, avail); // wrapped
 		
 		ringProducer.close(false);
 		ringConsumer.close(true);

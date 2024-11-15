@@ -107,19 +107,19 @@ public class BlockingRingTest {
 		consumer.join();
 		
 		// Did we receive all messages?
-		Assert.assertEquals(messagesReceived.size(), messagesToSend);
+		Assert.assertEquals(messagesToSend, messagesReceived.size());
 		
 		// Where there any duplicates?
-		Assert.assertEquals(messagesReceived.stream().distinct().count(), messagesReceived.size());
+		Assert.assertEquals(messagesReceived.size(), messagesReceived.stream().distinct().count());
 		
 		// Were the messages received in order?
 		List<Long> sortedList = new ArrayList<Long>(messagesReceived);
 		Collections.sort(sortedList);
-		Assert.assertEquals(sortedList, messagesReceived);
+		Assert.assertEquals(messagesReceived, sortedList);
 		
 		// If we sum all batches received do we get the correct number of messages?
 		long sumOfAllBatches = batchesReceived.stream().mapToLong(Long::longValue).sum();
-		Assert.assertEquals(sumOfAllBatches, messagesToSend);
+		Assert.assertEquals(messagesToSend, sumOfAllBatches);
 	}
 	
 	@Test
