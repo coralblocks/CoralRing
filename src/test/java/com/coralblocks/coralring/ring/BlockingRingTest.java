@@ -26,7 +26,7 @@ import org.junit.Test;
 import com.coralblocks.coralring.example.ring.Message;
 
 
-public class RingTest {
+public class BlockingRingTest {
 	
 	@Test
 	public void testAll() throws InterruptedException {
