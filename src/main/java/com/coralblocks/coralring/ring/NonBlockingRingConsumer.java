@@ -48,7 +48,6 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private final Builder<E> builder;
 
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Builder<E> builder, String filename) {
-		
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = this.capacity - 1;
