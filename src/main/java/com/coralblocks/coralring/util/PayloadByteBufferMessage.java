@@ -37,7 +37,9 @@ public class PayloadByteBufferMessage implements MemorySerializable {
 	@Override
 	public void readFrom(long pointer, Memory memory) {
 		this.payloadLength = memory.getInt(pointer);
+		payload.clear();
 		memory.getByteBuffer(pointer + 4, payload, payloadLength);
+		payload.flip();
 	}
 	
 	
