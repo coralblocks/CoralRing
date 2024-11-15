@@ -18,30 +18,35 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coralblocks.coralring.ring.BlockingRingConsumer;
+import com.coralblocks.coralring.ring.NonBlockingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class BlockingConsumer {
+public class NonBlockingConsumer {
 	
-	final static String FILENAME = BlockingProducer.FILENAME;
+	final static String FILENAME = NonBlockingProducer.FILENAME;
+	final static int RING_CAPACITY = NonBlockingProducer.RING_CAPACITY;
 	
 	public static void main(String[] args) {
 		
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
-		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
-		final RingConsumer<Message> ringConsumer = new BlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, FILENAME);
+		final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
 		
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
-								+ " with sleepTime of " + sleepTime + " nanoseconds (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
+								+ " (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
 		while(isRunning) {
 			long avail = ringConsumer.availableToPoll(); // <=========
+			if (avail == -1) {
+				// fell behind (bye bye!)
+				System.out.println("=====> Consumer fell behind!");
+				break;
+			}
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
 					Message m = ringConsumer.poll(); // <=========
@@ -50,7 +55,6 @@ public class BlockingConsumer {
 				}
 				ringConsumer.donePolling(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
-				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {
 				// busy spin while blocking (default and fastest wait strategy)
 				busySpinCount++; // save the number of busy-spins, just for extra info later
@@ -59,7 +63,7 @@ public class BlockingConsumer {
 		
 		System.out.println("Consumer DONE!");
 		
-		ringConsumer.close(true); // delete file
+		ringConsumer.close(isRunning == false); // delete file
 		
 		// Did we receive all messages?
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);
@@ -90,9 +94,4 @@ public class BlockingConsumer {
 	    }
 	    return true;
 	}
-	
-    private final static void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }

@@ -17,20 +17,21 @@ package com.coralblocks.coralring.example.ring;
 
 import java.util.Random;
 
-import com.coralblocks.coralring.ring.BlockingRingProducer;
+import com.coralblocks.coralring.ring.NonBlockingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
-public class BlockingProducer {
+public class NonBlockingProducer {
 	
 	final static String FILENAME = "shared-ring.mmap";
+	final static int RING_CAPACITY = 1024 * 16;
 	
 	public static void main(String[] args) {
 		
 		final int messagesToSend = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 		final int maxBatchSize = args.length > 1 ? Integer.parseInt(args[1]) : 100;
-		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 5; // 5 millis
+		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 10; // 10 milliseconds
 		
-		final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, FILENAME);
+		final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME);
 		
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
