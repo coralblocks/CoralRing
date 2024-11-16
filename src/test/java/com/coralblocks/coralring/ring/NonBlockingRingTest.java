@@ -82,6 +82,7 @@ public class NonBlockingRingTest {
 				boolean isRunning = true;
 				while(isRunning) {
 					long avail = ringConsumer.availableToPoll(); // <=========
+					if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
 							Message m = ringConsumer.poll(); // <=========
@@ -242,6 +243,102 @@ public class NonBlockingRingTest {
 		
 		ringProducer.close(false);
 		ringConsumer.close(true);
+	}
+	
+	@Test
+	public void testChecksum() throws InterruptedException {
+		
+		// NOTE: Here we are testing on the same JVM for convenience
+		
+		final String filename = "test-nonblocking-ring.mmap";
+		
+		final int messagesToSend = 1_000;
+		final int maxBatchSize = 50;
+		
+		final List<Long> messagesReceived  = new ArrayList<Long>();
+		final List<Long> batchesReceived = new ArrayList<Long>();
+		
+		Thread producer = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				
+				final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename, true);
+				
+				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				
+				Random rand = new Random();
+				
+				int remaining = messagesToSend;
+				while(remaining > 0) {
+					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
+					for(int i = 0; i < batchToSend; i++) {
+						Message m;
+						while((m = ringProducer.nextToDispatch()) == null) { // <=========
+							// busy spin while blocking (default and fastest wait strategy)
+						}
+						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
+					}
+					ringProducer.flush(); // <=========
+					remaining -= batchToSend;
+				}
+				
+				ringProducer.close(false); // don't delete file, consumer might still be reading it
+			}
+			
+		}, "RingProducer");
+		
+		Thread consumer = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				
+				final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, true);
+				
+				boolean isRunning = true;
+				while(isRunning) {
+					long avail = ringConsumer.availableToPoll(); // <=========
+					if (avail == -1) throw new RuntimeException("Consumer fell behind!");
+					if (avail > 0) {
+						for(long i = 0; i < avail; i++) {
+							Message m = ringConsumer.poll(); // <=========
+							if (m == null) throw new RuntimeException("Consumer tripped over producer! (checksum failed)");
+							messagesReceived.add(m.value); // save just the long value from this message
+							if (m.last) isRunning = false; // I'm done!
+						}
+						ringConsumer.donePolling(); // <=========
+						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
+					} else {
+						// busy spin while blocking (default and fastest wait strategy)
+					}
+				}	
+				
+				ringConsumer.close(true); // delete the file
+			}
+			
+		}, "RingConsumer");
+		
+		producer.start();
+		consumer.start();
+		
+		producer.join();
+		consumer.join();
+		
+		// Did we receive all messages?
+		Assert.assertEquals(messagesToSend, messagesReceived.size());
+		
+		// Where there any duplicates?
+		Assert.assertEquals(messagesReceived.size(), messagesReceived.stream().distinct().count());
+		
+		// Were the messages received in order?
+		List<Long> sortedList = new ArrayList<Long>(messagesReceived);
+		Collections.sort(sortedList);
+		Assert.assertEquals(messagesReceived, sortedList);
+		
+		// If we sum all batches received do we get the correct number of messages?
+		long sumOfAllBatches = batchesReceived.stream().mapToLong(Long::longValue).sum();
+		Assert.assertEquals(messagesToSend, sumOfAllBatches);
 	}
 	
 	@Test

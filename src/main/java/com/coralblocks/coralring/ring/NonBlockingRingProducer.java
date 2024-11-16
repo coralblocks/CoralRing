@@ -15,11 +15,14 @@
  */
 package com.coralblocks.coralring.ring;
 
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 
+import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
+import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.LinkedObjectList;
 import com.coralblocks.coralring.util.LinkedObjectPool;
 import com.coralblocks.coralring.util.MathUtils;
@@ -38,8 +41,14 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	// A typical CPU cache line
 	final static int CPU_CACHE_LINE = 64;
 	
+	// The length of the checksum that can be written with every message
+	final static int CHECKSUM_LENGTH = 8;
+	
 	// Two cache lines, one for each sequence number
 	final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
+	
+	// The default mode is to not write the checksum
+	final static boolean DEFAULT_WRITE_CHECKSUM = false;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -53,8 +62,10 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	private final ObjectPool<E> dataPool;
 	private final LinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
+	private final boolean writeChecksum;
+	private final ByteBufferMemory bbMemory;
 
-    public NonBlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
+    public NonBlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean writeChecksum) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -68,18 +79,36 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
+		this.writeChecksum = writeChecksum;
+		if (writeChecksum) {
+			this.bbMemory = new ByteBufferMemory(maxObjectSize);
+		} else {
+			this.bbMemory = null;
+		}
 	}
 	
 	public NonBlockingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
-		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename);
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_WRITE_CHECKSUM);
+	}
+	
+	public NonBlockingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum);
 	}
 	
 	public NonBlockingRingProducer(int maxObjectSize, Builder<E> builder, String filename) {
-		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename);
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_WRITE_CHECKSUM);
+	}
+	
+	public NonBlockingRingProducer(int maxObjectSize, Builder<E> builder, String filename, boolean writeChecksum) {
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, writeChecksum);
 	}
 	
 	public NonBlockingRingProducer(int maxObjectSize, Class<E> klass, String filename) {
-		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_WRITE_CHECKSUM);
+	}
+	
+	public NonBlockingRingProducer(int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum) {
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum);
 	}
 	
 	@Override
@@ -92,8 +121,8 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		return memory;
 	}
 	
-	private final static long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * maxObjectSize;
+	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
+		return HEADER_SIZE + capacity * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 
 	@Override
@@ -115,7 +144,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * maxObjectSize;
+		return dataAddress + index * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 	
 	private final int calcIndex(long value) {
@@ -139,7 +168,17 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 			long offset = calcDataOffset(index);
 			
 			E obj = iter.next();
-			obj.writeTo(offset, memory);
+			
+			if (writeChecksum) {
+				int len = obj.writeTo(bbMemory.getPointer(), bbMemory);
+				ByteBuffer bb = bbMemory.getByteBuffer();
+				bb.limit(len).position(0);
+				memory.putLong(offset, FastHash.hash64(bb));
+			} else {
+				memory.putLong(offset, 0L);
+			}
+			
+			obj.writeTo(offset + CHECKSUM_LENGTH, memory);
 			dataPool.release(obj);
 			
 			seq++;

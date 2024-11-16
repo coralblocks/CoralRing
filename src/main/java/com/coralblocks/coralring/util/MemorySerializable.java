@@ -19,7 +19,7 @@ import com.coralblocks.coralring.memory.Memory;
 
 public interface MemorySerializable {
 
-	public void writeTo(long pointer, Memory memory);
+	public int writeTo(long pointer, Memory memory);
 	
-	public void readFrom(long pointer, Memory memory);
+	public int readFrom(long pointer, Memory memory);
 }

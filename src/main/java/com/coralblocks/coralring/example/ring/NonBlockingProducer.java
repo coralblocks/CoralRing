@@ -30,14 +30,16 @@ public class NonBlockingProducer {
 		final int messagesToSend = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 		final int maxBatchSize = args.length > 1 ? Integer.parseInt(args[1]) : 100;
 		final int sleepTime = args.length > 2 ? Integer.parseInt(args[2]) : 1_000_000 * 10; // 10 milliseconds
+		final boolean writeChecksum = args.length > 3 ? Boolean.parseBoolean(args[3]) : false;
 		
-		final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME);
+		final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME, writeChecksum);
 		
 		int idToSend = 1; // each message from this producer will contain an unique value (id)
 		long busySpinCount = 0;
 		
-		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages"
-							+ " with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ringProducer.getLastOfferedSequence() + ")"
+		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages,"
+							+ (writeChecksum ? "" : " not") + " writting checksum"
+							+ " and with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ringProducer.getLastOfferedSequence() + ")"
 							+ "...\n");
 		
 		Random rand = new Random();

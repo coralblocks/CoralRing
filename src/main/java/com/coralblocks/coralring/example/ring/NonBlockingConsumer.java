@@ -29,18 +29,22 @@ public class NonBlockingConsumer {
 	public static void main(String[] args) {
 		
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
+		final boolean checkChecksum = args.length > 1 ? Boolean.parseBoolean(args[1]) : false;
+		final float fallBehindTolerance = args.length > 2 ? Float.parseFloat(args[2]) : 1.0f;
 
-		final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME);
+		final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME, checkChecksum, fallBehindTolerance);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
 		
-		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
+		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages,"
+								+ (checkChecksum ? "" : " not") + " checking checksum"
+								+ " and with fall behing tolerance " + fallBehindTolerance
 								+ " (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
-		while(isRunning) {
+		OUTER: while(isRunning) {
 			long avail = ringConsumer.availableToPoll(); // <=========
 			if (avail == -1) {
 				// fell behind (bye bye!)
@@ -50,6 +54,11 @@ public class NonBlockingConsumer {
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
 					Message m = ringConsumer.poll(); // <=========
+					if (m == null) {
+						// consumer tripped over producer
+						System.out.println("=====> Consumer tripped over producer! (checksum failed)");
+						break OUTER;
+					}
 					messagesReceived.add(m.value); // save just the long value from this message
 					if (m.last) isRunning = false; // I'm done!
 				}

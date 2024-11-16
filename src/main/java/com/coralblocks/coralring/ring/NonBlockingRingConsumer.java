@@ -16,23 +16,32 @@
 package com.coralblocks.coralring.ring;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 
+import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
+import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.MemoryPaddedLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 
 public class NonBlockingRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
-	private final static int DEFAULT_CAPACITY = BlockingRingProducer.DEFAULT_CAPACITY;
+	private final static int DEFAULT_CAPACITY = NonBlockingRingProducer.DEFAULT_CAPACITY;
 	
-	private final static int SEQ_PREFIX_PADDING = BlockingRingProducer.SEQ_PREFIX_PADDING;
+	private final static int SEQ_PREFIX_PADDING = NonBlockingRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int CPU_CACHE_LINE = BlockingRingProducer.CPU_CACHE_LINE;
+	private final static int CPU_CACHE_LINE = NonBlockingRingProducer.CPU_CACHE_LINE;
 	
-	private final static int HEADER_SIZE = BlockingRingProducer.HEADER_SIZE;
+	private final static int HEADER_SIZE = NonBlockingRingProducer.HEADER_SIZE;
+	
+	private final static int CHECKSUM_LENGTH = NonBlockingRingProducer.CHECKSUM_LENGTH;
+	
+	private final static boolean DEFAULT_CHECK_CHECKSUM = NonBlockingRingProducer.DEFAULT_WRITE_CHECKSUM;
+	
+	private final static float FALL_BEHIND_TOLERANCE = 1.0f;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -46,10 +55,12 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private final long headerAddress;
 	private final long dataAddress;
 	private final boolean isPowerOfTwo;
-	
+	private final int fallBehindCapacity;
 	private final Builder<E> builder;
+	private final boolean checkChecksum;
+	private final ByteBufferMemory bbMemory;
 
-	public NonBlockingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
+	public NonBlockingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean checkChecksum, float fallBehindTolerance) {
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
@@ -63,18 +74,75 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastPolledSeq = pollSequence.get();
 		this.data = builder.newInstance();
+		this.checkChecksum = checkChecksum;
+		if (checkChecksum) {
+			this.bbMemory = new ByteBufferMemory(maxObjectSize);
+		} else {
+			this.bbMemory = null;
+		}
+		if (checkChecksum) {
+			this.fallBehindCapacity = capacity; // there is no need for tolerance when using checksum!
+		} else {
+			this.fallBehindCapacity = calcFallBehindCapacity(this.capacity, fallBehindTolerance);
+		}
 	}
 
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
-		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename);
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum, float fallBehindTolerance) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, fallBehindTolerance);
+	}
+	
+	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, float fallBehindTolerance) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}
 	
 	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename) {
-		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename);
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, boolean checkChecksum) {
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, checkChecksum, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, boolean checkChecksum, float fallBehindTolerance) {
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, checkChecksum, fallBehindTolerance);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, float fallBehindTolerance) {
+		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}
 	
 	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename) {
-		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum) {
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, FALL_BEHIND_TOLERANCE);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum, float fallBehindTolerance) {
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, fallBehindTolerance);
+	}
+	
+	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, float fallBehindTolerance) {
+		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
+	}
+	
+	private final static int calcFallBehindCapacity(int capacity, float fallBehindTolerance) {
+		if (fallBehindTolerance > 1 || fallBehindTolerance <= 0) {
+			throw new IllegalArgumentException("Invalid fallBehindTolerance: " + fallBehindTolerance);
+		}
+		if (fallBehindTolerance == 1.0f) return capacity; // sanity
+		int c = Math.round(capacity * fallBehindTolerance);
+		if (c == 0) c = 1;
+		return c;
 	}
 	
 	@Override
@@ -93,7 +161,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * maxObjectSize;
+		return HEADER_SIZE + capacity * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {
@@ -104,7 +172,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	private final int calcCapacity(long totalMemorySize, int maxObjectSize) {
-		return (int) ((totalMemorySize - HEADER_SIZE) / maxObjectSize);
+		return (int) ((totalMemorySize - HEADER_SIZE) / (CHECKSUM_LENGTH + maxObjectSize));
 	}
 
 	@Override
@@ -115,12 +183,12 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	@Override
 	public final long availableToPoll() {
 		long avail = offerSequence.get() - lastPolledSeq;
-		if (avail > capacity) return -1; // wrapped
+		if (avail > fallBehindCapacity) return -1; // wrapped
 		return avail;
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * maxObjectSize;
+		return dataAddress + index * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 	
 	private final int calcIndex(long value) {
@@ -136,7 +204,28 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		pollCount++;
 		int index = calcIndex(++lastPolledSeq);
 		long offset = calcDataOffset(index);
-		data.readFrom(offset, memory);
+		
+		long checksum = 0L;
+		
+		if (checkChecksum) {
+			checksum = memory.getLong(offset);
+		}
+		
+		data.readFrom(offset + CHECKSUM_LENGTH, memory);
+		
+		if (checkChecksum) {
+			int len = data.writeTo(bbMemory.getPointer(), bbMemory);
+			ByteBuffer bb = bbMemory.getByteBuffer();
+			bb.limit(len).position(0);
+			long calculatedChecksum = FastHash.hash64(bb);
+			
+			if (checksum != calculatedChecksum) {
+				pollCount--;
+				lastPolledSeq--;
+				return null;
+			}
+		}
+		
 		return data;
 	}
 	
@@ -144,7 +233,26 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	public final E peek() {
 		int index = calcIndex(lastPolledSeq);
 		long offset = calcDataOffset(index);
-		data.readFrom(offset, memory);
+		
+		long checksum = 0L;
+		
+		if (checkChecksum) {
+			checksum = data.readFrom(offset, memory);
+		}
+		
+		data.readFrom(offset + CHECKSUM_LENGTH, memory);
+		
+		if (checkChecksum) {
+			int len = data.writeTo(bbMemory.getPointer(), bbMemory);
+			ByteBuffer bb = bbMemory.getByteBuffer();
+			bb.limit(len).position(0);
+			long calculatedChecksum = FastHash.hash64(bb);
+			
+			if (checksum != calculatedChecksum) {
+				return null;
+			}
+		}
+		
 		return data;
 	}
 

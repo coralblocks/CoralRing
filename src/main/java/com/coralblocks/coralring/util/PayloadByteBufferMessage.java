@@ -33,18 +33,20 @@ public class PayloadByteBufferMessage implements MemorySerializable {
 	}
 	
 	@Override
-	public void writeTo(long pointer, Memory memory) {
+	public int writeTo(long pointer, Memory memory) {
 		memory.putInt(pointer, payloadLength);
 		payload.limit(payloadLength).position(0);
 		memory.putByteBuffer(pointer + 4, payload, payloadLength);
+		return 4 + payloadLength;
 	}
 
 	@Override
-	public void readFrom(long pointer, Memory memory) {
+	public int readFrom(long pointer, Memory memory) {
 		this.payloadLength = memory.getInt(pointer);
 		payload.clear();
 		memory.getByteBuffer(pointer + 4, payload, payloadLength);
 		payload.flip();
+		return 4 + payloadLength;
 	}
 	
 	
