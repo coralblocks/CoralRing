@@ -14,6 +14,8 @@ public interface RingProducer<E extends MemorySerializable> {
 	
 	public long getLastOfferedSequence();
 	
+	public void setLastOfferedSequence(long lastOfferedSeq);
+	
 	public E nextToDispatch();
 	
 	public void flush();

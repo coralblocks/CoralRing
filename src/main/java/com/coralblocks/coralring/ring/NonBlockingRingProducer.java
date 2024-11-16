@@ -117,6 +117,11 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
+	public final void setLastOfferedSequence(long lastOfferedSeq) {
+		this.lastOfferedSeq = lastOfferedSeq;
+	}
+	
+	@Override
 	public final Memory getMemory() {
 		return memory;
 	}
