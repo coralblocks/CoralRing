@@ -83,6 +83,16 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	}
 	
 	@Override
+	public final void setLastPolledSequence(long lastPolledSeq) {
+		this.lastPolledSeq = lastPolledSeq;
+	}
+	
+	@Override
+	public final long getLastOfferedSequence() {
+		return offerSequence.get();
+	}
+	
+	@Override
 	public final Memory getMemory() {
 		return memory;
 	}

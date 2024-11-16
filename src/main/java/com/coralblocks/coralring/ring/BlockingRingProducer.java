@@ -109,6 +109,11 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	}
 	
 	@Override
+	public final void setLastOfferedSequence(long lastOfferedSeq) {
+		this.lastOfferedSeq = lastOfferedSeq;
+	}
+	
+	@Override
 	public final Memory getMemory() {
 		return memory;
 	}

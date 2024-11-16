@@ -14,6 +14,10 @@ public interface RingConsumer<E extends MemorySerializable> {
 	
 	public long getLastPolledSequence();
 	
+	public void setLastPolledSequence(long lastPolledSequence);
+	
+	public long getLastOfferedSequence();
+	
 	public long availableToPoll();
 	
 	public E poll();

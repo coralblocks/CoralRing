@@ -147,6 +147,16 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
+	public final void setLastPolledSequence(long lastPolledSeq) {
+		this.lastPolledSeq = lastPolledSeq;
+	}
+	
+	@Override
+	public final long getLastOfferedSequence() {
+		return offerSequence.get();
+	}
+	
+	@Override
 	public final Memory getMemory() {
 		return memory;
 	}
@@ -233,7 +243,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		long checksum = 0L;
 		
 		if (checkChecksum) {
-			checksum = data.readFrom(offset, memory);
+			checksum = memory.getLong(offset);
 		}
 		
 		data.readFrom(offset + CHECKSUM_LENGTH, memory);
