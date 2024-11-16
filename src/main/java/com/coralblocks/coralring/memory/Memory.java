@@ -23,7 +23,7 @@ public interface Memory {
 	
 	public long getPointer();
 	
-	public void release(boolean deleteFileIfUsed);
+	public void release(boolean deleteFile);
 	
 	// ==========
 	
