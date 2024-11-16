@@ -45,7 +45,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	final static int CHECKSUM_LENGTH = 8;
 	
 	// Two cache lines, one for each sequence number
-	final static int HEADER_SIZE = CPU_CACHE_LINE + CPU_CACHE_LINE;
+	final static int HEADER_SIZE = CPU_CACHE_LINE;
 	
 	// The default mode is to not write the checksum
 	final static boolean DEFAULT_WRITE_CHECKSUM = false;

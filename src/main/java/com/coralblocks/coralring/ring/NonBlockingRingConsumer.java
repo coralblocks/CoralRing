@@ -33,8 +33,6 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	
 	private final static int SEQ_PREFIX_PADDING = NonBlockingRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int CPU_CACHE_LINE = NonBlockingRingProducer.CPU_CACHE_LINE;
-	
 	private final static int HEADER_SIZE = NonBlockingRingProducer.HEADER_SIZE;
 	
 	private final static int CHECKSUM_LENGTH = NonBlockingRingProducer.CHECKSUM_LENGTH;
@@ -49,7 +47,6 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private long lastPolledSeq;
 	private long pollCount = 0;
 	private final MemoryPaddedLong offerSequence;
-	private final MemoryPaddedLong pollSequence;
 	private final int maxObjectSize;
 	private final Memory memory;
 	private final long headerAddress;
@@ -71,8 +68,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
-		this.lastPolledSeq = pollSequence.get();
+		this.lastPolledSeq = 0;
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
 		if (checkChecksum) {
@@ -272,7 +268,6 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	
 	@Override
 	public final void donePolling() {
-		pollSequence.set(lastPolledSeq);
 		pollCount = 0;
 	}
 	
