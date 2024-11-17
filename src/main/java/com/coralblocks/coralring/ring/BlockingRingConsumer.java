@@ -150,7 +150,7 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	
 	@Override
 	public final E peek() {
-		int index = calcIndex(lastPolledSeq);
+		int index = calcIndex(lastPolledSeq + 1);
 		long offset = calcDataOffset(index);
 		data.readFrom(offset, memory);
 		return data;

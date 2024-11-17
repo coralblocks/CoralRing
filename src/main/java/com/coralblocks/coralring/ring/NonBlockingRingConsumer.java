@@ -240,7 +240,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	
 	@Override
 	public final E peek() {
-		int index = calcIndex(lastPolledSeq);
+		int index = calcIndex(lastPolledSeq + 1);
 		long offset = calcDataOffset(index);
 		
 		long checksum = 0L;
@@ -252,7 +252,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		data.readFrom(offset + CHECKSUM_LENGTH, memory);
 		
 		if (checkChecksum) {
-			int len = data.writeTo(bbMemory.getPointer(), bbMemory);
+			bbMemory.putLong(bbMemory.getPointer(), lastPolledSeq + 1);
+			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 			ByteBuffer bb = bbMemory.getByteBuffer();
 			bb.limit(len).position(0);
 			long calculatedChecksum = FastHash.hash64(bb);
