@@ -44,6 +44,9 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	// The length of the checksum that can be written with every message
 	final static int CHECKSUM_LENGTH = 8;
 	
+	// The length of the sequence number used to calculate the checksum
+	final static int SEQUENCE_LENGTH = 8; // long
+	
 	// Two cache lines, one for each sequence number
 	final static int HEADER_SIZE = CPU_CACHE_LINE;
 	
@@ -81,7 +84,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		this.dataList = new LinkedObjectList<E>(64);
 		this.writeChecksum = writeChecksum;
 		if (writeChecksum) {
-			this.bbMemory = new ByteBufferMemory(maxObjectSize);
+			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
 		} else {
 			this.bbMemory = null;
 		}
@@ -175,7 +178,8 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 			E obj = iter.next();
 			
 			if (writeChecksum) {
-				int len = obj.writeTo(bbMemory.getPointer(), bbMemory);
+				bbMemory.putLong(bbMemory.getPointer(), seq); // use the sequence too
+				int len = obj.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 				ByteBuffer bb = bbMemory.getByteBuffer();
 				bb.limit(len).position(0);
 				memory.putLong(offset, FastHash.hash64(bb));

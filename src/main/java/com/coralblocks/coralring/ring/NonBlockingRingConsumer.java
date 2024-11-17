@@ -39,6 +39,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	
 	private final static boolean DEFAULT_CHECK_CHECKSUM = NonBlockingRingProducer.DEFAULT_WRITE_CHECKSUM;
 	
+	private final static int SEQUENCE_LENGTH = NonBlockingRingProducer.SEQUENCE_LENGTH;
+	
 	private final static float FALL_BEHIND_TOLERANCE = 1.0f;
 	
 	private final int capacity;
@@ -72,7 +74,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
 		if (checkChecksum) {
-			this.bbMemory = new ByteBufferMemory(maxObjectSize);
+			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
 		} else {
 			this.bbMemory = null;
 		}
@@ -220,7 +222,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		data.readFrom(offset + CHECKSUM_LENGTH, memory);
 		
 		if (checkChecksum) {
-			int len = data.writeTo(bbMemory.getPointer(), bbMemory);
+			bbMemory.putLong(bbMemory.getPointer(), lastPolledSeq);
+			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 			ByteBuffer bb = bbMemory.getByteBuffer();
 			bb.limit(len).position(0);
 			long calculatedChecksum = FastHash.hash64(bb);
