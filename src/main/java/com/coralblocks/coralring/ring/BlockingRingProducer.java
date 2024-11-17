@@ -123,8 +123,8 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		return capacity;
 	}
 	
-	private final static long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * maxObjectSize;
+	private final static long calcTotalMemorySize(int capacity, int maxObjectSize) {
+		return HEADER_SIZE + ((long) capacity) * maxObjectSize;
 	}
 
 	@Override

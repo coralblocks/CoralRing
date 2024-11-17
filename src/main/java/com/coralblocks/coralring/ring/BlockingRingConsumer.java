@@ -97,8 +97,8 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 		return memory;
 	}
 	
-	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * maxObjectSize;
+	private final long calcTotalMemorySize(int capacity, int maxObjectSize) {
+		return HEADER_SIZE + ((long) capacity) * maxObjectSize;
 	}
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {

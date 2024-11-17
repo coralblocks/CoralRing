@@ -166,8 +166,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		return capacity;
 	}
 	
-	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * (CHECKSUM_LENGTH + maxObjectSize);
+	private final long calcTotalMemorySize(int capacity, int maxObjectSize) {
+		return HEADER_SIZE + ((long) capacity) * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {

@@ -126,8 +126,8 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		return memory;
 	}
 	
-	private final long calcTotalMemorySize(long capacity, int maxObjectSize) {
-		return HEADER_SIZE + capacity * (CHECKSUM_LENGTH + maxObjectSize);
+	private final long calcTotalMemorySize(int capacity, int maxObjectSize) {
+		return HEADER_SIZE + ((long) capacity) * (CHECKSUM_LENGTH + maxObjectSize);
 	}
 
 	@Override
