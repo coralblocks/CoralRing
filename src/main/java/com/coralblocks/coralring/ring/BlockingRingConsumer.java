@@ -133,9 +133,9 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	
 	private final int calcIndex(long value) {
 		if (isPowerOfTwo) {
-			return (int) (value & capacityMinusOne);
+			return (int) ((value - 1) & capacityMinusOne);
 		} else {
-			return (int) (value % capacity);
+			return (int) ((value - 1) % capacity);
 		}
 	}
 	
