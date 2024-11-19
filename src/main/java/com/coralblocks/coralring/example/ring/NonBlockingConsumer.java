@@ -31,6 +31,8 @@ public class NonBlockingConsumer {
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
 		final boolean checkChecksum = args.length > 1 ? Boolean.parseBoolean(args[1]) : false;
 		final float fallBehindTolerance = args.length > 2 ? Float.parseFloat(args[2]) : 1.0f;
+		final long sleepTime = args.length > 3 ? Long.parseLong(args[3]) : -1;
+		final boolean deleteFile = args.length > 4 ? Boolean.parseBoolean(args[4]) : true;
 
 		final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME, checkChecksum, fallBehindTolerance);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
@@ -64,6 +66,7 @@ public class NonBlockingConsumer {
 				}
 				ringConsumer.donePolling(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
+				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {
 				// busy spin while blocking (default and fastest wait strategy)
 				busySpinCount++; // save the number of busy-spins, just for extra info later
@@ -72,7 +75,7 @@ public class NonBlockingConsumer {
 		
 		System.out.println("Consumer DONE!");
 		
-		ringConsumer.close(isRunning == false); // delete file
+		ringConsumer.close(isRunning == false && deleteFile); // delete file
 		
 		// Did we receive all messages?
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);
@@ -103,4 +106,9 @@ public class NonBlockingConsumer {
 	    }
 	    return true;
 	}
+	
+    private final static void sleepFor(long nanos) {
+        long time = System.nanoTime();
+        while((System.nanoTime() - time) < nanos);
+    }
 }
