@@ -1,0 +1,10 @@
+# .editorconfig
+
+# Indicate that this is the root configuration file
+root = true
+
+# Apply settings to all files
+[*.java]
+indent_style = tab
+tab_width = 4
+
