@@ -144,6 +144,124 @@ public class NonBlockingMcastRingTest {
 	}
 	
 	@Test
+	public void testWrapping() throws InterruptedException {
+		
+		// NOTE: Here we are testing on the same JVM for convenience
+		
+		final String filename = "test-nonblocking-ring.mmap";
+		
+		final int messagesToSend = 1_025; // one more than capacity (1024) to wrap
+		final int maxBatchSize = 50;
+		
+		final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+		
+		Thread producer = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				
+				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				
+				Random rand = new Random();
+				
+				int remaining = messagesToSend;
+				while(remaining > 0) {
+					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
+					for(int i = 0; i < batchToSend; i++) {
+						Message m;
+						while((m = ringProducer.nextToDispatch()) == null) { // <=========
+							// busy spin while blocking (default and fastest wait strategy)
+						}
+						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
+					}
+					ringProducer.flush(); // <=========
+					remaining -= batchToSend;
+					
+					// sleep so that the consumers NEVER fall behind...
+					try { Thread.sleep(5); } catch(InterruptedException e) { throw new RuntimeException(e); }
+				}
+			}
+			
+		}, "RingProducer");
+
+		Thread[] consumers = new Thread[3];
+		
+		final List<List<Long>> messagesReceived  = new ArrayList<List<Long>>(consumers.length);
+		final List<List<Long>> batchesReceived = new ArrayList<List<Long>>(consumers.length);
+		
+		for(int i = 0; i < consumers.length; i++) {
+			
+			final List<Long> mr = new ArrayList<Long>(messagesToSend);
+			final List<Long> br = new ArrayList<Long>(messagesToSend);
+			
+			messagesReceived.add(mr);
+			batchesReceived.add(br);
+		
+			consumers[i] = new Thread(new Runnable() {
+	
+				@Override
+				public void run() {
+					
+					final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
+					
+					boolean isRunning = true;
+					while(isRunning) {
+						long avail = ringConsumer.availableToPoll(); // <=========
+						if (avail == -1) throw new RuntimeException("Consumer fell behind!");
+						if (avail > 0) {
+							for(long i = 0; i < avail; i++) {
+								Message m = ringConsumer.poll(); // <=========
+								mr.add(m.value); // save just the long value from this message
+								if (m.last) isRunning = false; // I'm done!
+							}
+							ringConsumer.donePolling(); // <=========
+							br.add(avail); // save the batch sizes received, just so we can double check
+						} else {
+							// busy spin while blocking (default and fastest wait strategy)
+						}
+					}	
+					
+					ringConsumer.close(false);
+				}
+				
+			}, "RingConsumer-" + i);
+		}
+		
+		for(Thread consumer : consumers) consumer.start();
+		producer.start();
+
+		for(Thread consumer : consumers) consumer.join();
+		producer.join();
+		
+		// now close producer and delete file
+		ringProducer.close(true);
+		
+		// Did we receive all messages?
+		for(int i = 0; i < consumers.length; i++) {
+			Assert.assertEquals(messagesToSend, messagesReceived.get(i).size());
+		}
+		
+		// Where there any duplicates?
+		for(int i = 0; i < consumers.length; i++) {
+			Assert.assertEquals(messagesReceived.get(i).size(), messagesReceived.get(i).stream().distinct().count());
+		}
+		
+		// Were the messages received in order?
+		for(int i = 0; i < consumers.length; i++) {
+			List<Long> sortedList = new ArrayList<Long>(messagesReceived.get(i));
+			Collections.sort(sortedList);
+			Assert.assertEquals(messagesReceived.get(i), sortedList);
+		}
+		
+		// If we sum all batches received do we get the correct number of messages?
+		for(int i = 0; i < consumers.length; i++) {
+			long sumOfAllBatches = batchesReceived.get(i).stream().mapToLong(Long::longValue).sum();
+			Assert.assertEquals(messagesToSend, sumOfAllBatches);
+		}
+	}
+	
+	@Test
 	public void testConsumerFallingBehind() throws InterruptedException {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
