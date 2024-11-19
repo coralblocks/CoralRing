@@ -47,7 +47,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	// The length of the sequence number used to calculate the checksum
 	final static int SEQUENCE_LENGTH = 8; // long
 	
-	// Two cache lines, one for each sequence number
+	// One cache line for the producer sequence
 	final static int HEADER_SIZE = CPU_CACHE_LINE;
 	
 	// The default mode is to not write the checksum
