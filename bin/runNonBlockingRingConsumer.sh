@@ -6,13 +6,7 @@ FALL_BEHIND_TOLERANCE=${3:-1.0}
 SLEEP_TIME=${4:--1}
 DELETE_FILE=${5:-true}
 
-source ./bin/checkJvmVersion.sh
-
-ADD_OPENS=""
-
-if (( major_version > 8 )); then
-    ADD_OPENS="--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
-fi
+ADD_OPENS="--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
 
 CMD="java $ADD_OPENS -cp target/classes:target/coralring-all.jar com.coralblocks.coralring.example.ring.NonBlockingConsumer $EXPECTED_MESSAGES_TO_RECEIVE $CHECK_CHECKSUM $FALL_BEHIND_TOLERANCE $SLEEP_TIME $DELETE_FILE"
 

@@ -10,26 +10,26 @@ alias java23='sudo rm /Library/Java/JavaVirtualMachines/Default; sudo ln -sf /Li
 java16
 java -version
 
-./bin/runRingBlockingProducer.sh &
-./bin/runRingBlockingConsumer.sh
+./bin/runBlockingRingProducer.sh &
+./bin/runBlockingRingConsumer.sh
 
 java17
 java -version
 
-./bin/runRingBlockingProducer.sh &
-./bin/runRingBlockingConsumer.sh
+./bin/runBlockingRingProducer.sh &
+./bin/runBlockingRingConsumer.sh
 
 java21
 java -version
 
-./bin/runRingBlockingProducer.sh &
-./bin/runRingBlockingConsumer.sh
+./bin/runBlockingRingProducer.sh &
+./bin/runBlockingRingConsumer.sh
 
 java23
 java -version
 
-./bin/runRingBlockingProducer.sh &
-./bin/runRingBlockingConsumer.sh
+./bin/runBlockingRingProducer.sh &
+./bin/runBlockingRingConsumer.sh
 
 java16
 
