@@ -35,7 +35,7 @@ public class NonBlockingRingTest {
 		
 		final String filename = "test-nonblocking-ring.mmap";
 		
-		final int messagesToSend = 1_000;
+		final int messagesToSend = 1_000; // less than the capacity (1024) so it will never wrap
 		final int maxBatchSize = 50;
 		
 		final List<Long> messagesReceived  = new ArrayList<Long>();
