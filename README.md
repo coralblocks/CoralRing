@@ -25,7 +25,14 @@ Note that for maximum performance the producer and consumer should busy spin whe
 
 <img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
 
-Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwritting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
+Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwritting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
+```Java
+long avail = ringConsumer.availableToPoll();
+			
+if (avail == 0) continue; // busy spin as the ring is empty
+			
+if (avail == -1) throw new RuntimeException("The consumer fell behind too much! (ring wrapped)");
+```
 
 This lagging consumer problem can be mitigated by creating a large memory-mapped file so that your shared memory ring is big enough to give room for the consumer to fall behind and catch up. However there is a more important issue that we need to address with a non-blocking ring which is when the consumer falls behind so much that it hits the _edge_ of the circular ring. When that happens there is a _small chance_ that the consumer will be reading the oldest message in the ring at the same time that the producer is overwritting it with the newest mesage. In other words, the consumer can _trip over_ the producer.
 
@@ -35,21 +42,26 @@ The _tripping over_ problem will _only_ happen when the consumer falls behind N 
 
 Unfortantelly, although this will further reduce the chances for the consumer to read a corrupt message, it does not make it zero. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
-The following [NonBlockingConsumer](src/main/java/com/coralblocks/coralring/ring/NonBlockingRingConsumer.java) constructors can be used to specify a _fall behind tolerance_ as a percentage (_float_) of the capacity:
-```Java
-public NonBlockingRingConsumer(final int capacity, final int maxObjectSize,
-      final Builder<E> builder, final String filename, float fallBehindTolerance);
-
-public NonBlockingRingConsumer(final int capacity, final int maxObjectSize,
-      final Class<E> klass, final String filename, float fallBehindTolerance);
-
-public NonBlockingRingConsumer(final int maxObjectSize, final Builder<E> builder,
-      final String filename, float fallBehindTolerance);
-
-public NonBlockingRingConsumer(final int maxObjectSize, final Class<E> klass,
-      final String filename, float fallBehindTolerance);
-```
+The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting, in other words, before `availableToPoll()` returns `-1`.
 
 ### Using a _checksum_ for each message
 
-To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it.
+To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it. Although we use a _fast_ hash algorithm ([_xxHash_](https://github.com/apache/drill/blob/master/exec/java-exec/src/main/java/org/apache/drill/exec/expr/fn/impl/XXHash.java](https://xxhash.com/))) to calculate the checksum, there is a small performance penalty to pay when you choose this approach.
+
+The constructor of `NonBlockingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `poll()` or `peek()` :
+```Java
+for(long i = 0; i < avail; i++) {
+      
+    MutableLong ml = ringConsumer.poll();
+      
+    if (ml == null) {
+        throw new RuntimeException("The consumer tripped over the producer! (checksum failed)");
+    }
+      
+    // (...)
+}
+```
+
+Note that when using the _checksum_ approach there is no reason to also use a _fall behind tolerance_. You can catch the exception, assume that the consumer has fallen behind too much and disconnect (give up).
+
+## Non-Blocking Multicast Ring
