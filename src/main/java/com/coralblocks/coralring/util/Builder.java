@@ -15,10 +15,27 @@
  */
 package com.coralblocks.coralring.util;
 
+/**
+ * An interface that knows how to create instances of a class
+ * 
+ * @param <E> the class of the object that will be built
+ */
 public interface Builder<E> {
 
+	/**
+	 * Return a new instance of the class
+	 * 
+	 * @return a new instance
+	 */
 	public E newInstance();
 	
+	/**
+	 * Convenient method to create a builder from a class through its default (no-arguments) constructor.
+	 * 
+	 * @param <E> the class of the object that will be built
+	 * @param klass the class of the object that will be built
+	 * @return a new builder for the given class
+	 */
 	public static <E> Builder<E> createBuilder(final Class<E> klass) {
 		return new Builder<E>() {
 			@Override

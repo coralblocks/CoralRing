@@ -50,7 +50,7 @@ public class NonBlockingConsumer {
 			long avail = ringConsumer.availableToPoll(); // <=========
 			if (avail == -1) {
 				// fell behind (bye bye!)
-				System.out.println("=====> Consumer fell behind!");
+				System.out.println("=====> Consumer fell behind! (ring wrapped)");
 				break;
 			}
 			if (avail > 0) {

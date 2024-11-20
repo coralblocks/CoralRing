@@ -17,25 +17,51 @@ package com.coralblocks.coralring.util;
 
 import com.coralblocks.coralring.memory.Memory;
 
-public class MemoryPaddedLong {
+/**
+ * The class maintains a long in {@link Memory} in a <i>volatile</i> way.
+ */
+public class MemoryVolatileLong {
 
 	private final long address;
 	private final Memory memory;
 	
-	public MemoryPaddedLong(long address, Memory memory, Long value) {
+	/**
+	 * Creates a new long in {@link Memory} with the given value at the given address.
+	 * 
+	 * @param address the address in memory to write the long value
+	 * @param memory the memory to use
+	 * @param value the value to write to memory or null to write nothing
+	 */
+	public MemoryVolatileLong(long address, Memory memory, Long value) {
 		this.address = address;
 		this.memory = memory;
 		if (value != null) set(value.longValue());
 	}
 	
-	public MemoryPaddedLong(long address,  Memory memory) {
+	/**
+	 * Creates a new long in {@link Memory} at the given address.
+	 * 
+	 * @param address the address in memory to write the long value
+	 * @param memory the memory to use
+	 */
+	public MemoryVolatileLong(long address,  Memory memory) {
 		this(address, memory, null);
 	}
 	
+	/**
+	 * Writes the given long value to memory in a volatile way. See {@link Memory#putLongVolatile(long, long)}.
+	 * 
+	 * @param value the long value to write
+	 */
 	public final void set(long value) {
 		memory.putLongVolatile(address, value);
 	}
 	
+	/**
+	 * Reads the long value from memory in a volatile way. See {@link Memory#getLongVolatile(long)}.
+	 * 
+	 * @return the long value read from memory
+	 */
 	public final long get() {
 		return memory.getLongVolatile(address);
 	}

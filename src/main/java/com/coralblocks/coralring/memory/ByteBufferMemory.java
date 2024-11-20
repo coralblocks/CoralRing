@@ -18,12 +18,21 @@ package com.coralblocks.coralring.memory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * Implementation of {@link Memory} inside a <code>ByteBuffer</code>, which can be direct or non-direct. The default is for the <code>ByteBuffer</code> to be direct.
+ */
 public class ByteBufferMemory implements Memory {
 	
-	private final static boolean USE_DIRECT_BYTE_BUFFER = true;
+	public final static boolean USE_DIRECT_BYTE_BUFFER = true;
 	
 	private ByteBuffer bb;
 	
+	/**
+	 * Creates a new <code>ByteBufferMemory</code> with the given size.
+	 * 
+	 * @param size the size of this memory
+	 * @param useDirectByteBuffer true to use a direct byte buffer
+	 */
 	public ByteBufferMemory(int size, boolean useDirectByteBuffer) {
 		if (useDirectByteBuffer) {
 			this.bb = ByteBuffer.allocateDirect(size).order(ByteOrder.LITTLE_ENDIAN);
@@ -32,10 +41,20 @@ public class ByteBufferMemory implements Memory {
 		}
 	}
 	
+	/**
+	 * Creates a new <code>ByteBufferMemory</code> with the given size. By default the <code>ByteBuffer</code> created is direct.
+	 * 
+	 * @param size the size of this memory
+	 */
 	public ByteBufferMemory(int size) {
 		this(size, USE_DIRECT_BYTE_BUFFER);
 	}
 	
+	/**
+	 * Return the <code>ByteBuffer</code> used by this memory.
+	 * 
+	 * @return the <code>ByteBuffer</code> used by this memory
+	 */
 	public ByteBuffer getByteBuffer() {
 		return bb;
 	}

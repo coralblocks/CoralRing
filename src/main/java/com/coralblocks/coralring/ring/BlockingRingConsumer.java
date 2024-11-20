@@ -21,9 +21,26 @@ import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemoryPaddedLong;
+import com.coralblocks.coralring.util.MemoryVolatileLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 
+/**
+ * <p>
+ * The implementation of a blocking {@link RingConsumer}. It can block if the ring becomes empty, in other words, if the producer
+ * on the other side is falling behind or not offering new messages fast enough. It uses shared memory through a memory-mapped file.
+ * </p>
+ * <p>
+ * The shared memory allocated for the ring contains a header space where the producer and consumer sequence numbers are kept and maintained for mutual access.
+ * Memory barriers are implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
+ * memory operations.
+ * </p>
+ * <p>
+ * We assume a CPU cache line of 64 bytes and we place each sequence number (consumer one and producer one) on each cache line. The sequence number is a <code>long</code>
+ * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
+ * </p>
+ * 
+ * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
+ */
 public class BlockingRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
 	private final static int DEFAULT_CAPACITY = BlockingRingProducer.DEFAULT_CAPACITY;
@@ -39,8 +56,8 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	private final E data;
 	private long lastPolledSeq;
 	private long pollCount = 0;
-	private final MemoryPaddedLong offerSequence;
-	private final MemoryPaddedLong pollSequence;
+	private final MemoryVolatileLong offerSequence;
+	private final MemoryVolatileLong pollSequence;
 	private final int maxObjectSize;
 	private final Memory memory;
 	private final long headerAddress;
@@ -49,6 +66,14 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 	
 	private final Builder<E> builder;
 
+	/**
+	 * Creates a new ring consumer
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
@@ -59,20 +84,42 @@ public class BlockingRingConsumer<E extends MemorySerializable> implements RingC
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
+		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
+		this.pollSequence = new MemoryVolatileLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastPolledSeq = pollSequence.get();
 		this.data = builder.newInstance();
 	}
 
+	/**
+	 * Creates a new ring consumer
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
+	/**
+	 * Creates a new ring consumer with the default capacity (i.e. 1024)
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename);
 	}
 	
+	/**
+	 * Creates a new ring consumer with the default capacity (i.e. 1024)
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}

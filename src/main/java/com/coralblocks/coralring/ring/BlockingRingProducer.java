@@ -23,26 +23,27 @@ import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.LinkedObjectList;
 import com.coralblocks.coralring.util.LinkedObjectPool;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemoryPaddedLong;
+import com.coralblocks.coralring.util.MemoryVolatileLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.ObjectPool;
 
 /**
  * <p>
- * The producer side of a queue that uses shared memory instead of heap memory so that communication can happen across JVMs.
- * Refer to the <a href="https://www.github.com/coralblocks/CoralQueue" target="_blank">CoralQueue</a> project for more details.
+ * The implementation of a blocking {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
+ * It can block if the ring becomes full, in other words, if the consumer on the other side is falling behind or not polling new messages fast enough.
+ * It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
  * The shared memory allocated for the ring contains a header space where the producer and consumer sequence numbers are kept and maintained for mutual access.
- * We also keep in the header two ints: one for the ring capacity and one for the max object size.
- * A memory barrier is implemented through the {@link MemoryPaddedLong} class, which uses the <code>putVolatile</code> and <code>getVolatile</code> native memory operations.
+ * Memory barriers are implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
+ * memory operations.
  * </p>
  * <p>
  * We assume a CPU cache line of 64 bytes and we place each sequence number (consumer one and producer one) on each cache line. The sequence number is a <code>long</code>
  * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
  * </p>
  * 
- * @param <E> The data transfer {@link MemorySerializable} object to be used by this ring
+ * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
 public class BlockingRingProducer<E extends MemorySerializable> implements RingProducer<E> {
 	
@@ -65,14 +66,22 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	private final long dataAddress;
 	private long lastOfferedSeq;
 	private long maxSeqBeforeWrapping;
-	private final MemoryPaddedLong offerSequence;
-	private final MemoryPaddedLong pollSequence;
+	private final MemoryVolatileLong offerSequence;
+	private final MemoryVolatileLong pollSequence;
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
 	private final LinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 
+	/**
+	 * Creates a new ring producer
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
     public BlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
@@ -83,22 +92,44 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryPaddedLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
+		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
+		this.pollSequence = new MemoryVolatileLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
 	
+    /**
+     * Creates a new ring producer
+     * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+     */
 	public BlockingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename);
 	}
 	
+	/**
+	 * Creates a new ring producer with the default capacity (i.e. 1024)
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingProducer(int maxObjectSize, Builder<E> builder, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename);
 	}
 	
+	/**
+	 * Creates a new ring producer with the default capacity (i.e. 1024)
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public BlockingRingProducer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename);
 	}

@@ -1,3 +1,18 @@
+/* 
+ * Copyright 2024 (c) CoralBlocks - http://www.coralblocks.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
 package com.coralblocks.coralring.example.ring;
 
 import com.coralblocks.coralring.memory.Memory;
@@ -15,16 +30,16 @@ public class Message implements MemorySerializable {
 	}
 	
 	@Override
-	public int writeTo(long pointer, Memory memory) {
-		memory.putLong(pointer, value);
-		memory.putByte(pointer + 8, last ? (byte) 'Y' : (byte) 'N');
+	public int writeTo(long address, Memory memory) {
+		memory.putLong(address, value);
+		memory.putByte(address + 8, last ? (byte) 'Y' : (byte) 'N');
 		return SIZE;
 	}
 	
 	@Override
-	public int readFrom(long pointer, Memory memory) {
-		this.value = memory.getLong(pointer);
-		this.last = memory.getByte(pointer + 8) == 'Y';
+	public int readFrom(long address, Memory memory) {
+		this.value = memory.getLong(address);
+		this.last = memory.getByte(address + 8) == 'Y';
 		return SIZE;
 	}
 

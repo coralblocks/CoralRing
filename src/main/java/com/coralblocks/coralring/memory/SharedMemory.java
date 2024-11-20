@@ -32,6 +32,9 @@ import java.nio.file.Paths;
 import sun.misc.Unsafe;
 import sun.nio.ch.FileChannelImpl;
 
+/**
+ * This class employs many different reflection tricks and <code>sun.misc.Unsafe</code> to allocate, access and release native memory in Java through memory-mapped files.
+ */
 public class SharedMemory implements Memory {
 	
 	// Long.MAX_VALUE = 9,223,372,036,854,775,807 bytes
@@ -108,23 +111,44 @@ public class SharedMemory implements Memory {
 		addressField = addrField;
 	}
 	
+	/**
+	 * Returns true is this class can be used and is available in your platform
+	 * 
+	 * @return true if available
+	 */
 	public static boolean isAvailable() {
 		return UNSAFE_AVAILABLE && MAP_UNMAP_AVAILABLE && ADDRESS_AVAILABLE;
 	}
 
-	private final long pointer;
+	private final long address;
 	private final long size;
 	private final MappedByteBuffer mbb;
 	private final String filename;
 	
+	/**
+	 * Creates a shared memory with the given size. The filename will be implied.
+	 * 
+	 * @param size the size of the memory
+	 */
 	public SharedMemory(long size) {
 		this(size, createFilename(size));
 	}
 	
+	/**
+	 * Creates a shared memory with the given filename. The size will be implied from the file.
+	 * 
+	 * @param filename the name of the memory mapped file containing this memory
+	 */
 	public SharedMemory(String filename) {
 		this(-1, filename);
 	}
 	
+	/**
+	 * Creates a shared memory with the given size and filename.
+	 * 
+	 * @param size the size of the memory or -1 to imply from the file
+	 * @param filename the name of the file
+	 */
 	public SharedMemory(long size, String filename) {
 		
 		if (!UNSAFE_AVAILABLE) {
@@ -169,12 +193,12 @@ public class SharedMemory implements Memory {
 			FileChannel fileChannel = file.getChannel();
 			if (isJava21) {
 				this.mbb = (MappedByteBuffer) mmap.invoke(fileChannel, MapMode.READ_WRITE, 0L, this.size);
-				this.pointer = (long) addressField.get(this.mbb);
+				this.address = (long) addressField.get(this.mbb);
 			} else if (isNewSyncMap) {
-				this.pointer = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
+				this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
 				this.mbb = null;
 			} else {
-				this.pointer = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
+				this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
 				this.mbb = null;
 			}
 			fileChannel.close();
@@ -184,6 +208,12 @@ public class SharedMemory implements Memory {
 		}
 	}
 	
+	/**
+	 * Return the size in bytes of the given file.
+	 * 
+	 * @param filename the name of the file
+	 * @return the size in bytes of the file
+	 */
 	public final static long findFileSize(String filename) {
 		File file = new File(filename);
 		if (!file.exists()) throw new RuntimeException("File not found: " + filename);
@@ -196,6 +226,11 @@ public class SharedMemory implements Memory {
 		return SharedMemory.class.getSimpleName() + "-" + size + ".mmap";
 	}
 	
+	/**
+	 * Return the name of the file containing this memory.
+	 * 
+	 * @return the name of the file
+	 */
 	public String getFilename() {
 		return filename;
 	}
@@ -207,7 +242,7 @@ public class SharedMemory implements Memory {
 	
 	@Override
 	public long getPointer() {
-		return pointer;
+		return address;
 	}
 
 	@Override
@@ -217,11 +252,11 @@ public class SharedMemory implements Memory {
 		
 		try {
 			if (isJava19) { // isJava21 will be true here too
-				unmmap.invoke(null, pointer, size);
+				unmmap.invoke(null, address, size);
 			} else if (isJava21) {
 				unmmap.invoke(null, this.mbb);
 			} else {
-				unmmap.invoke(null, pointer, size);
+				unmmap.invoke(null, address, size);
 			}
 		} catch(Exception e) {
 			firstException = new RuntimeException("Cannot release mmap shared memory!", e);
@@ -330,8 +365,8 @@ public class SharedMemory implements Memory {
 			throw new RuntimeException("putByteBuffer can only take a direct byte buffer!");
 		}
 		try {
-			long srcPointer = (long) addressField.get(src);
-			unsafe.copyMemory(srcPointer, address, len);
+			long srcAddress = (long) addressField.get(src);
+			unsafe.copyMemory(srcAddress, address, len);
 		} catch(Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -343,9 +378,9 @@ public class SharedMemory implements Memory {
 			throw new RuntimeException("getByteBuffer can only take a direct byte buffer!");
 		}
 		try {
-			long dstPointer = (long) addressField.get(dst);
-			dstPointer += dst.position();
-			unsafe.copyMemory(address, dstPointer, len);
+			long dstAddress = (long) addressField.get(dst);
+			dstAddress += dst.position();
+			unsafe.copyMemory(address, dstAddress, len);
 			dst.position(dst.position() + len);
 		} catch(Exception e) {
 			throw new RuntimeException(e);

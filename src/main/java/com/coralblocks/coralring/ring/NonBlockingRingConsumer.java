@@ -24,9 +24,30 @@ import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemoryPaddedLong;
+import com.coralblocks.coralring.util.MemoryVolatileLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 
+/**
+ * <p>
+ * The implementation of a non-blocking {@link RingConsumer}. Of course it will block only if the ring becomes empty, in other words, if the producer
+ * on the other side is falling behind or not offering new messages fast enough. It uses shared memory through a memory-mapped file.
+ * </p>
+ * <p>
+ * If the consumer is too slow and falls behind, its {@link NonBlockingRingConsumer#availableToPoll()} method will return <code>-1</code> to indicate that
+ * the consumer has fallen behind too much, will lose messages and cannot proceed.
+ * </p>
+ * <p>
+ * The shared memory allocated for the ring contains a header space where the producer sequence number is kept and maintained for mutual access.
+ * A memory barrier is implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
+ * memory operations.
+ * </p>
+ * <p>
+ * We assume a CPU cache line of 64 bytes and we place the sequence number on the middle of cache line. The sequence number is a <code>long</code>
+ * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
+ * </p>
+ * 
+ * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
+ */
 public class NonBlockingRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
 	private final static int DEFAULT_CAPACITY = NonBlockingRingProducer.DEFAULT_CAPACITY;
@@ -48,7 +69,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private final E data;
 	private long lastPolledSeq;
 	private long pollCount = 0;
-	private final MemoryPaddedLong offerSequence;
+	private final MemoryVolatileLong offerSequence;
 	private final int maxObjectSize;
 	private final Memory memory;
 	private final long headerAddress;
@@ -59,6 +80,18 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private final boolean checkChecksum;
 	private final ByteBufferMemory bbMemory;
 
+	/**
+	 * <p>Creates a new non-blocking ring consumer.</p>
+	 * 
+	 * <p>NOTE: The <code>fallBehindTolerance</code> provided is ignored in case the checksum is used (i.e. in case checkChecksum == true)</p>
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean checkChecksum, float fallBehindTolerance) {
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
@@ -69,7 +102,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
+		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
 		this.lastPolledSeq = 0;
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
@@ -85,50 +118,156 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		}
 	}
 
+	/**
+	 * <p>Creates a new non-blocking ring consumer.</p>
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer.</p>
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 */
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer.</p>
+	 * 
+	 * <p>NOTE: The <code>fallBehindTolerance</code> provided is ignored in case the checksum is used (i.e. in case checkChecksum == true)</p>
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum, float fallBehindTolerance) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, fallBehindTolerance);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer.</p>
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, float fallBehindTolerance) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, boolean checkChecksum) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, checkChecksum, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * <p>NOTE: The <code>fallBehindTolerance</code> provided is ignored in case the checksum is used (i.e. in case checkChecksum == true)</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, boolean checkChecksum, float fallBehindTolerance) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, checkChecksum, fallBehindTolerance);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Builder<E> builder, String filename, float fallBehindTolerance) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, FALL_BEHIND_TOLERANCE);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * <p>NOTE: The <code>fallBehindTolerance</code> provided is ignored in case the checksum is used (i.e. in case checkChecksum == true)</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param checkChecksum true to check the checksum in order to avoid reading a corrupt message in the situation where the consumer trips over the producer
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, boolean checkChecksum, float fallBehindTolerance) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, checkChecksum, fallBehindTolerance);
 	}
 	
+	/**
+	 * <p>Creates a new non-blocking ring consumer with the default capacity (i.e. 1024).</p>
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
+	 */
 	public NonBlockingRingConsumer(int maxObjectSize, Class<E> klass, String filename, float fallBehindTolerance) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}

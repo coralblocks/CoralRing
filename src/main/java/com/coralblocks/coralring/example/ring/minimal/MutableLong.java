@@ -72,14 +72,14 @@ public class MutableLong implements MemorySerializable {
 	}
 	
 	@Override
-	public int writeTo(long pointer, Memory memory) {
-		memory.putLong(pointer, value);
+	public int writeTo(long address, Memory memory) {
+		memory.putLong(address, value);
 		return LONG_SIZE;
 	}
 
 	@Override
-	public int readFrom(long pointer, Memory memory) {
-		value = memory.getLong(pointer);
+	public int readFrom(long address, Memory memory) {
+		value = memory.getLong(address);
 		return LONG_SIZE;
 	}
 	

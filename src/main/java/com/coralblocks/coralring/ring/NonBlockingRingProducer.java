@@ -26,10 +26,29 @@ import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.LinkedObjectList;
 import com.coralblocks.coralring.util.LinkedObjectPool;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemoryPaddedLong;
+import com.coralblocks.coralring.util.MemoryVolatileLong;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.ObjectPool;
 
+/**
+ * <p>
+ * The implementation of a non-blocking {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
+ * It never blocks! It continues to write to the ring even when the ring becomes full because the ring is a circular data structure, in other words, the
+ * oldest entries in the ring will be overwritten by newest entries.
+ * It uses shared memory through a memory-mapped file.
+ * </p>
+ * <p>
+ * The shared memory allocated for the ring contains a header space where the producer sequence number is kept and maintained for mutual access.
+ * A memory barrier is implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
+ * memory operations.
+ * </p>
+ * <p>
+ * We assume a CPU cache line of 64 bytes and we place the sequence number on the middle of cache line. The sequence number is a <code>long</code>
+ * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
+ * </p>
+ * 
+ * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
+ */
 public class NonBlockingRingProducer<E extends MemorySerializable> implements RingProducer<E> {
 	
 	// The default capacity for this shared memory ring
@@ -59,7 +78,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	private final long headerAddress;
 	private final long dataAddress;
 	private long lastOfferedSeq;
-	private final MemoryPaddedLong offerSequence;
+	private final MemoryVolatileLong offerSequence;
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
@@ -68,6 +87,15 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 	private final boolean writeChecksum;
 	private final ByteBufferMemory bbMemory;
 
+	/**
+	 * Creates a new non-blocking ring producer.
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 */
     public NonBlockingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean writeChecksum) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
@@ -78,7 +106,7 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
-		this.offerSequence = new MemoryPaddedLong(headerAddress + SEQ_PREFIX_PADDING, memory);
+		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
 		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
@@ -90,26 +118,73 @@ public class NonBlockingRingProducer<E extends MemorySerializable> implements Ri
 		}
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer.
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_WRITE_CHECKSUM);
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer.
+	 * 
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 */
 	public NonBlockingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum);
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer with the default capacity (i.e. 1024).
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingProducer(int maxObjectSize, Builder<E> builder, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, DEFAULT_WRITE_CHECKSUM);
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer with the default capacity (i.e. 1024).
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 */
 	public NonBlockingRingProducer(int maxObjectSize, Builder<E> builder, String filename, boolean writeChecksum) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, writeChecksum);
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer with the default capacity (i.e. 1024).
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 */
 	public NonBlockingRingProducer(int maxObjectSize, Class<E> klass, String filename) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_WRITE_CHECKSUM);
 	}
 	
+	/**
+	 * Creates a new non-blocking ring producer with the default capacity (i.e. 1024).
+	 * 
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 */
 	public NonBlockingRingProducer(int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum);
 	}

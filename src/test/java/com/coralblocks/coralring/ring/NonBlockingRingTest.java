@@ -86,6 +86,7 @@ public class NonBlockingRingTest {
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
 							Message m = ringConsumer.poll(); // <=========
+							if (m == null) throw new RuntimeException("Bad checksum!");
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
@@ -184,6 +185,7 @@ public class NonBlockingRingTest {
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
 							Message m = ringConsumer.poll(); // <=========
+							if (m == null) throw new RuntimeException("Bad checksum!");
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
