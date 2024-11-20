@@ -36,7 +36,7 @@ public class MinimalBlockingConsumer {
 			
 			if (avail == 0) continue; // busy spin
 			
-			for(int i = 0; i < avail; i++) {
+			for(long i = 0; i < avail; i++) {
 				
 				MutableLong ml = ringConsumer.poll();
 				

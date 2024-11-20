@@ -38,7 +38,7 @@ public class MinimalNonBlockingConsumer {
 			
 			if (avail == -1) throw new RuntimeException("The consumer fell behind! (ring wrapped)");
 			
-			for(int i = 0; i < avail; i++) {
+			for(long i = 0; i < avail; i++) {
 				
 				MutableLong ml = ringConsumer.poll();
 				
