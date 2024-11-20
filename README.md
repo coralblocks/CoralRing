@@ -7,6 +7,8 @@ An interesting characteristic of _memory-mapped files_ is that `they allow your 
 
 For maximum performance (lowest possible latency) you should place your memory-mapped file inside the Linux `/dev/shm/` folder so that the contents of your file are entirely kept in RAM memory. Of course by doing so you are back to being limited to your available RAM memory. CoralRing uses a _circular_ queue (_ring_) in shared memory so even with a small piece of memory you can transmit an unlimited number of messages to the other process.
 
+For some performance numbers you can check [this link](https://www.coralblocks.com/index.php/inter-process-communication-with-coralqueue/).
+
 ## Blocking Ring
 
 <img src="images/BlockingRing.png" alt="BlockingRing" width="50%" height="50%" />
