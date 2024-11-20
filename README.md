@@ -13,7 +13,7 @@ For some performance numbers you can check [this link](https://www.coralblocks.c
 
 <img src="images/BlockingRing.png" alt="BlockingRing" width="50%" height="50%" />
 
-Because the ring is a _bounded_ circular queue, the first approach is to have a _blocking_ producer and consumer. In other words, the ring producer will block (_wait_) when the ring is full and the ring consumer will block (_wait_) when the ring is empty. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
+Because the ring is a _bounded_ circular queue, the first approach is to have a _blocking_ producer and consumer. In other words, the ring producer will block (_wait_) when the ring is full and the ring consumer will block (_wait_) when the ring is empty. Basically a slow consumer will cause the producer to block, waiting for space to become available in the ring. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
 
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingProducer.java) for a minimal example of using blocking ring producer
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingConsumer.java) for a minimal example of using blocking ring consumer
