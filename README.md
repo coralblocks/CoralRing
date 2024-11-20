@@ -1,6 +1,6 @@
 # CoralRing
 
-CoralRing is a ultra-low-latency, lock-free, garbage-free, batching and concurrent circular queue (_ring_)
+CoralRing is an ultra-low-latency, lock-free, garbage-free, batching and concurrent circular queue (_ring_)
 in off-heap shared memory for inter-process communication (IPC) in Java across different JVMs using memory-mapped files.
 
 An interesting characteristic of _memory-mapped files_ is that `they allow your shared memory to exceed the size of your machine physical memory (RAM) by relying on the OS's virtual memory mechanism`. Therefore your shared memory is limited not by your RAM but by the size of your hard drive (HDD/SSD). The trade-off of a large memory-mapped file is performance as the OS needs to swap pages back and forth from the hard drive to memory and vice-versa, in a process called _paging_.
@@ -25,7 +25,7 @@ Note that for maximum performance the producer and consumer should busy spin whe
 
 <img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
 
-Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwritting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
+Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
 ```Java
 long avail = ringConsumer.availableToPoll();
 			
@@ -34,13 +34,13 @@ if (avail == 0) continue; // busy spin as the ring is empty
 if (avail == -1) throw new RuntimeException("The consumer fell behind too much! (ring wrapped)");
 ```
 
-This lagging consumer problem can be mitigated by creating a large memory-mapped file so that your shared memory ring is big enough to give room for the consumer to fall behind and catch up. However there is a more important issue that we need to address with a non-blocking ring which is when the consumer falls behind so much that it hits the _edge_ of the circular ring. When that happens there is a _small chance_ that the consumer will be reading the oldest message in the ring at the same time that the producer is overwritting it with the newest mesage. In other words, the consumer can _trip over_ the producer.
+This lagging consumer problem can be mitigated by creating a large memory-mapped file so that your shared memory ring is big enough to give room for the consumer to fall behind and catch up. However there is a more important issue that we need to address with a non-blocking ring which is when the consumer falls behind so much that it hits the _edge_ of the circular ring. When that happens there is a _small chance_ that the consumer will be reading the oldest message in the ring at the same time that the producer is overwriting it with the newest message. In other words, the consumer can _trip over_ the producer.
 
 ### Using a _fall behind tolerance_
 
 The _tripping over_ problem will _only_ happen when the consumer falls behind N messages, where N is equal to the capacity of the ring. If it falls behind a little more, it simply disconnects. If it falls behind a little less it _should_ still be able to read the next message without any issues. `So the bigger the capacity of the ring the less likely it is for the consumer to trip over the producer` because the more room it has to fall behind safely. Therefore, to reduce the chances for the consumer to get close to the edge, we can introduce a _fall behind tolerance_, in other words, `we can make the consumer give up and disconnect early when it falls to a percentage P of the capacity of the ring`.
 
-Unfortantelly, although this will further reduce the chances for the consumer to read a corrupt message, it does not make it zero. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
+Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, it does not make it zero. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
 The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting, in other words, before `availableToPoll()` returns `-1`.
 
@@ -71,3 +71,5 @@ Note that when using the _checksum_ approach there is no reason to also use a _f
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonBlockingConsumer.java) for a basic example of using non-blocking ring consumer
 
 ## Non-Blocking Multicast Ring
+
+Non-blocking rings can be used naturally 
