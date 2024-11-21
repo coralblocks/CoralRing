@@ -72,6 +72,10 @@ Note that when using the _checksum_ approach there is no reason to also use a _f
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonBlockingProducer.java) for a basic example of using non-blocking ring producer
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonBlockingConsumer.java) for a basic example of using non-blocking ring consumer
 
+### Using a _very large_ memory-mapped file
+
+There is also another _simple_ approach to solve the _tripping over_ problem: `just allocate a very large memory-mapped file so that the producer never has to wrap around the ring`. For example, let's say you want to send _100 million_ messages per day, with a maximum size of _1024 bytes_. If you do the math you will see that this is _only_ 95 gigabytes of hard drive space. And as a bonus, as long as you don't go above your predicted maximum number of messages (no wrapping around the ring), you will also have all your messages persisted to disk at the end of your daily session. Then to begin a new session you can move the session file someplace else for archiving, reset the message sequence back to 1, and start over again.
+
 ## Non-Blocking Multicast Ring
 
 A non-blocking ring can be used naturally to implement _multicast consumers_. In other words, `you can have multiple non-blocking ring consumers reading from the same non-blocking ring producer`. All consumers will read all messages in the exact same order. A consumer can still fall behind and disconnect, but it will never miss a message or process a message out of order.
