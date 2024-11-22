@@ -2,6 +2,7 @@
 
 CoralRing is an ultra-low-latency, lock-free, garbage-free, batching and concurrent circular queue (_ring_)
 in off-heap shared memory for inter-process communication (IPC) in Java across different JVMs using memory-mapped files.
+It uses memory barriers through [volatile operations](https://github.com/coralblocks/CoralRing/blob/9d341629c330875c8c6d31559a670742c224e524/src/main/java/com/coralblocks/coralring/util/MemoryVolatileLong.java#L57) instead of locks to allow messages to be sent as fast as possible.
 
 An interesting characteristic of _memory-mapped files_ is that `they allow your shared memory to exceed the size of your machine physical memory (RAM) by relying on the OS's virtual memory mechanism`. Therefore your shared memory is limited not by your RAM but by the size of your hard drive (HDD/SSD). The trade-off of a large memory-mapped file is performance as the OS needs to swap pages back and forth from hard drive to memory and vice-versa, in a process called _paging_.
 
