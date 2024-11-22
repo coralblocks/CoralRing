@@ -57,7 +57,7 @@ This lagging consumer problem can be mitigated by creating a large memory-mapped
 
 The _tripping over_ problem will _only_ happen when the consumer falls behind N messages, where N is equal to the capacity of the ring. If it falls behind a little more, it simply disconnects. If it falls behind a little less it _should_ still be able to read the next message without any issues. `So the bigger the capacity of the ring the less likely it is for the consumer to trip over the producer` because the more room it has to fall behind safely. Therefore, to reduce the chances for the consumer to get close to the edge, we can introduce a _fall behind tolerance_, in other words, `we can make the consumer give up and disconnect early when it falls to a percentage P of the capacity of the ring`.
 
-The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting, in other words, before `availableToPoll()` returns `-1`.
+The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls behind that threshold then its `availableToPoll()` method returns `-1`.
 
 Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, it does not make it zero. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
