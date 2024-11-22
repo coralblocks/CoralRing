@@ -7,7 +7,7 @@ NUMBER_OF_CONSUMERS=${4:-3}
 
 ADD_OPENS="--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED"
 
-CMD="java $ADD_OPENS -cp target/classes:target/coralring-all.jar com.coralblocks.coralring.example.ring.BlockingMcastProducer $MESSAGES_TO_SEND $BATCH_SIZE_TO_SEND $SLEEP_TIME $NUMBER_OF_CONSUMERS"
+CMD="java $ADD_OPENS -cp target/classes:target/coralring-all.jar com.coralblocks.coralring.example.ring.BlockingBroadcastProducer $MESSAGES_TO_SEND $BATCH_SIZE_TO_SEND $SLEEP_TIME $NUMBER_OF_CONSUMERS"
 
 echo
 echo $CMD
