@@ -23,17 +23,17 @@ Because the ring is a _bounded_ circular queue, the first approach is to have a 
 
 Note that for maximum performance the producer and consumer should busy spin when blocking. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
 
-## Blocking Multicast Ring
+## Blocking Broadcast Ring
 
 <img src="images/BlockingMcastRing.png" alt="BlockingMcastRing" width="50%" height="50%" />
 
 You can also have a single producer broadcasting messages to multiple consumers so that `each consumer gets all the messages in the same order that they were sent by the producer`. Any slow consumer can cause the ring to get full and the producer to block. As the slow consumer makes progress so will the producer.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingMcastProducer.java) for a minimal example of using blocking multicast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingMcastConsumer.java) for a minimal example of using blocking multicast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingBroadcastProducer.java) for a minimal example of using blocking broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingBroadcastConsumer.java) for a minimal example of using blocking broadcast ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingMcastProducer.java) for a basic example of using blocking multicast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingMcastConsumer.java) for a basic example of using blocking multicast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastProducer.java) for a basic example of using blocking broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastConsumer.java) for a basic example of using blocking broadcast ring consumer
 
 Note that for maximum performance the producer and consumers should busy spin when blocking. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
 
