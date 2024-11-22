@@ -15,20 +15,20 @@
  */
 package com.coralblocks.coralring.example.ring.minimal;
 
-import com.coralblocks.coralring.ring.BlockingMcastRingConsumer;
+import com.coralblocks.coralring.ring.BlockingBroadcastRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class MinimalBlockingMcastConsumer {
+public class MinimalBlockingBroadcastConsumer {
 	
-	private final static String FILENAME = MinimalBlockingMcastProducer.FILENAME;
-	private final static int NUMBER_OF_CONSUMERS = MinimalBlockingMcastProducer.NUMBER_OF_CONSUMERS;
+	private final static String FILENAME = MinimalBlockingBroadcastProducer.FILENAME;
+	private final static int NUMBER_OF_CONSUMERS = MinimalBlockingBroadcastProducer.NUMBER_OF_CONSUMERS;
 	
 	public static void main(String[] args) {
 		
 		final int messagesToSend = 10;
 		final int consumerIndex = Integer.parseInt(args[0]); // you must specify the index of the consumer
 		
-		final RingConsumer<MutableLong> ringConsumer = new BlockingMcastRingConsumer<MutableLong>(8, MutableLong.getMaxSize(), 
+		final RingConsumer<MutableLong> ringConsumer = new BlockingBroadcastRingConsumer<MutableLong>(8, MutableLong.getMaxSize(), 
 										MutableLong.class, FILENAME, consumerIndex, NUMBER_OF_CONSUMERS); // default size is 1024
 		
 		boolean isRunning = true;

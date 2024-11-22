@@ -29,7 +29,7 @@ import com.coralblocks.coralring.util.ObjectPool;
 
 /**
  * <p>
- * The implementation of a blocking multicast {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
+ * The implementation of a blocking broadcast {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
  * It can block if the ring becomes full, in other words, if the consumers on the other side are falling behind or not polling new messages fast enough.
  * It uses shared memory through a memory-mapped file.
  * </p>
@@ -46,7 +46,7 @@ import com.coralblocks.coralring.util.ObjectPool;
  * 
  * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
-public class BlockingMcastRingProducer<E extends MemorySerializable> implements RingProducer<E> {
+public class BlockingBroadcastRingProducer<E extends MemorySerializable> implements RingProducer<E> {
 	
 	// The default capacity for this shared memory ring
 	final static int DEFAULT_CAPACITY = 1024;
@@ -81,7 +81,7 @@ public class BlockingMcastRingProducer<E extends MemorySerializable> implements 
 	 * @param filename the file to be used by its shared memory
 	 * @param numberOfConsumers the number of consumers that will be reading from this ring
 	 */
-    public BlockingMcastRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int numberOfConsumers) {
+    public BlockingBroadcastRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int numberOfConsumers) {
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -112,7 +112,7 @@ public class BlockingMcastRingProducer<E extends MemorySerializable> implements 
 	 * @param filename the file to be used by its shared memory
 	 * @param numberOfConsumers the number of consumers that will be reading from this ring
      */
-	public BlockingMcastRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers) {
+	public BlockingBroadcastRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, numberOfConsumers);
 	}
 	
@@ -124,7 +124,7 @@ public class BlockingMcastRingProducer<E extends MemorySerializable> implements 
 	 * @param filename the file to be used by its shared memory
 	 * @param numberOfConsumers the number of consumers that will be reading from this ring
 	 */
-	public BlockingMcastRingProducer(int maxObjectSize, Builder<E> builder, String filename, int numberOfConsumers) {
+	public BlockingBroadcastRingProducer(int maxObjectSize, Builder<E> builder, String filename, int numberOfConsumers) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, numberOfConsumers);
 	}
 	
@@ -136,7 +136,7 @@ public class BlockingMcastRingProducer<E extends MemorySerializable> implements 
 	 * @param filename the file to be used by its shared memory
 	 * @param numberOfConsumers the number of consumers that will be reading from this ring
 	 */
-	public BlockingMcastRingProducer(int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers) {
+	public BlockingBroadcastRingProducer(int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, numberOfConsumers);
 	}
 	

@@ -18,10 +18,10 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coralblocks.coralring.ring.BlockingMcastRingConsumer;
+import com.coralblocks.coralring.ring.BlockingBroadcastRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class BlockingMcastConsumer {
+public class BlockingBroadcastConsumer {
 	
 	final static String FILENAME = BlockingProducer.FILENAME;
 	
@@ -33,7 +33,7 @@ public class BlockingMcastConsumer {
 		final int numberOfConsumers = args.length > 3 ? Integer.parseInt(args[3]) : 3;
 		final boolean deleteFile = args.length > 4 ? Boolean.parseBoolean(args[4]) : true;
 
-		final RingConsumer<Message> ringConsumer = new BlockingMcastRingConsumer<Message>(Message.getMaxSize(), Message.class, FILENAME, consumerIndex, numberOfConsumers);
+		final RingConsumer<Message> ringConsumer = new BlockingBroadcastRingConsumer<Message>(Message.getMaxSize(), Message.class, FILENAME, consumerIndex, numberOfConsumers);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;

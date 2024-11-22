@@ -26,7 +26,7 @@ import org.junit.Test;
 import com.coralblocks.coralring.example.ring.Message;
 
 
-public class BlockingMcastRingTest {
+public class BlockingBroadcastRingTest {
 	
 	@Test
 	public void testNotWrapping() throws InterruptedException {
@@ -39,7 +39,7 @@ public class BlockingMcastRingTest {
 		final int maxBatchSize = 50;
 		final int numberOfConsumers = 3;
 		
-		final RingProducer<Message> ringProducer = new BlockingMcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
 		
 		Thread producer = new Thread(new Runnable() {
 
@@ -88,7 +88,7 @@ public class BlockingMcastRingTest {
 				@Override
 				public void run() {
 					
-					final RingConsumer<Message> ringConsumer = new BlockingMcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
+					final RingConsumer<Message> ringConsumer = new BlockingBroadcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
 					
 					boolean isRunning = true;
 					while(isRunning) {
@@ -158,7 +158,7 @@ public class BlockingMcastRingTest {
 		final int maxBatchSize = 50;
 		final int numberOfConsumers = 3;
 		
-		final RingProducer<Message> ringProducer = new BlockingMcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
 		
 		Thread producer = new Thread(new Runnable() {
 
@@ -210,7 +210,7 @@ public class BlockingMcastRingTest {
 				@Override
 				public void run() {
 					
-					final RingConsumer<Message> ringConsumer = new BlockingMcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
+					final RingConsumer<Message> ringConsumer = new BlockingBroadcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
 					
 					boolean isRunning = true;
 					while(isRunning) {
@@ -280,7 +280,7 @@ public class BlockingMcastRingTest {
 		final int maxBatchSize = 1_000;
 		final int numberOfConsumers = 3;
 		
-		final RingProducer<Message> ringProducer = new BlockingMcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(Message.getMaxSize(), Message.class, filename, numberOfConsumers);
 		
 		Thread producer = new Thread(new Runnable() {
 
@@ -329,7 +329,7 @@ public class BlockingMcastRingTest {
 				@Override
 				public void run() {
 					
-					final RingConsumer<Message> ringConsumer = new BlockingMcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
+					final RingConsumer<Message> ringConsumer = new BlockingBroadcastRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, consumerIndex, numberOfConsumers);
 					
 					boolean isRunning = true;
 					while(isRunning) {
@@ -390,12 +390,12 @@ public class BlockingMcastRingTest {
 	@Test
 	public void testFindingCapacity() {
 		
-		final String filename = "test-ring-capacity-mcast.mmap";
+		final String filename = "test-ring-capacity-bcast.mmap";
 		
-		final RingProducer<Message> ringProducer = new BlockingMcastRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename, 3);
-		final RingConsumer<Message> ringConsumer0 = new BlockingMcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 0, 3);
-		final RingConsumer<Message> ringConsumer1 = new BlockingMcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 1, 3);
-		final RingConsumer<Message> ringConsumer2 = new BlockingMcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 2, 3);
+		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename, 3);
+		final RingConsumer<Message> ringConsumer0 = new BlockingBroadcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 0, 3);
+		final RingConsumer<Message> ringConsumer1 = new BlockingBroadcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 1, 3);
+		final RingConsumer<Message> ringConsumer2 = new BlockingBroadcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 2, 3);
 		
 		Assert.assertEquals(ringProducer.getCapacity(), ringConsumer0.getCapacity());
 		Assert.assertEquals(ringProducer.getCapacity(), ringConsumer1.getCapacity());
@@ -410,14 +410,14 @@ public class BlockingMcastRingTest {
 	@Test
 	public void testFindingNumberOfConsumers() {
 		
-		final String filename = "test-ring-capacity-mcast.mmap";
+		final String filename = "test-ring-capacity-bcast.mmap";
 		
 		final int numberOfConsumers = 3;
 		
-		final RingProducer<Message> ringProducer = new BlockingMcastRingProducer<Message>(64, Message.getMaxSize(), Message.class, filename, numberOfConsumers);
-		final BlockingMcastRingConsumer<Message> ringConsumer0 = new BlockingMcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 0, -1);
-		final BlockingMcastRingConsumer<Message> ringConsumer1 = new BlockingMcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 1, -1);
-		final BlockingMcastRingConsumer<Message> ringConsumer2 = new BlockingMcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 2, -1);
+		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(64, Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+		final BlockingBroadcastRingConsumer<Message> ringConsumer0 = new BlockingBroadcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 0, -1);
+		final BlockingBroadcastRingConsumer<Message> ringConsumer1 = new BlockingBroadcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 1, -1);
+		final BlockingBroadcastRingConsumer<Message> ringConsumer2 = new BlockingBroadcastRingConsumer<Message>(64, Message.getMaxSize(), Message.class, filename, 2, -1);
 		
 		Assert.assertEquals(numberOfConsumers, ringConsumer0.getNumberOfConsumers());
 		Assert.assertEquals(numberOfConsumers, ringConsumer1.getNumberOfConsumers());

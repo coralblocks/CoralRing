@@ -26,7 +26,7 @@ import com.coralblocks.coralring.util.MemorySerializable;
 
 /**
  * <p>
- * The implementation of a blocking multicast {@link RingConsumer}. It can block if the ring becomes empty, in other words, if the producer
+ * The implementation of a blocking broadcast {@link RingConsumer}. It can block if the ring becomes empty, in other words, if the producer
  * on the other side is falling behind or not offering new messages fast enough. It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
@@ -42,13 +42,13 @@ import com.coralblocks.coralring.util.MemorySerializable;
  * 
  * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
-public class BlockingMcastRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
+public class BlockingBroadcastRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
-	private final static int DEFAULT_CAPACITY = BlockingMcastRingProducer.DEFAULT_CAPACITY;
+	private final static int DEFAULT_CAPACITY = BlockingBroadcastRingProducer.DEFAULT_CAPACITY;
 	
-	private final static int SEQ_PREFIX_PADDING = BlockingMcastRingProducer.SEQ_PREFIX_PADDING;
+	private final static int SEQ_PREFIX_PADDING = BlockingBroadcastRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int CPU_CACHE_LINE = BlockingMcastRingProducer.CPU_CACHE_LINE;
+	private final static int CPU_CACHE_LINE = BlockingBroadcastRingProducer.CPU_CACHE_LINE;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -75,7 +75,7 @@ public class BlockingMcastRingConsumer<E extends MemorySerializable> implements 
 	 * @param consumerIndex the index of this consumer
 	 * @param numberOfConsumers the total number of consumers (including this one)
 	 */
-	public BlockingMcastRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int consumerIndex, final int numberOfConsumers) {
+	public BlockingBroadcastRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int consumerIndex, final int numberOfConsumers) {
 		if (numberOfConsumers == -1 && capacity == -1) throw new IllegalArgumentException("capacity or numberOfConsumers must be defined! (at least one)");
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize, numberOfConsumers) : capacity);
 		this.numberOfConsumers = (numberOfConsumers == -1 ? findNumberOfConsumersFromFile(filename, maxObjectSize, capacity) : numberOfConsumers);
@@ -104,7 +104,7 @@ public class BlockingMcastRingConsumer<E extends MemorySerializable> implements 
 	 * @param consumerIndex the index of this consumer
 	 * @param numberOfConsumers the total number of consumers (including this one)
 	 */
-	public BlockingMcastRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, int consumerIndex, int numberOfConsumers) {
+	public BlockingBroadcastRingConsumer(int capacity, int maxObjectSize, Class<E> klass, String filename, int consumerIndex, int numberOfConsumers) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, consumerIndex, numberOfConsumers);
 	}
 	
@@ -117,7 +117,7 @@ public class BlockingMcastRingConsumer<E extends MemorySerializable> implements 
 	 * @param consumerIndex the index of this consumer
 	 * @param numberOfConsumers the total number of consumers (including this one)
 	 */
-	public BlockingMcastRingConsumer(int maxObjectSize, Builder<E> builder, String filename, int consumerIndex, int numberOfConsumers) {
+	public BlockingBroadcastRingConsumer(int maxObjectSize, Builder<E> builder, String filename, int consumerIndex, int numberOfConsumers) {
 		this(DEFAULT_CAPACITY, maxObjectSize, builder, filename, consumerIndex, numberOfConsumers);
 	}
 	
@@ -130,7 +130,7 @@ public class BlockingMcastRingConsumer<E extends MemorySerializable> implements 
 	 * @param consumerIndex the index of this consumer
 	 * @param numberOfConsumers the total number of consumers (including this one)
 	 */
-	public BlockingMcastRingConsumer(int maxObjectSize, Class<E> klass, String filename, int consumerIndex, int numberOfConsumers) {
+	public BlockingBroadcastRingConsumer(int maxObjectSize, Class<E> klass, String filename, int consumerIndex, int numberOfConsumers) {
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, consumerIndex, numberOfConsumers);
 	}
 	
