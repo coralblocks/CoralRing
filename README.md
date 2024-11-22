@@ -93,7 +93,7 @@ There is also another _simple_ approach to solve the _tripping over_ problem: `j
 
 ## Non-Blocking Multicast Ring
 
-A non-blocking ring can be used naturally to implement _multicast consumers_. That means that `you can have multiple non-blocking ring consumers reading from the same non-blocking ring producer`. All consumers will read all messages in the exact same order. A consumer can still fall behind and disconnect, but it will never miss a message or process a message out of order. The producer does not even know how many consumers it is multicasting to. In other words, consumers can leave and join the ring at any moment without impacting the producer.
+A non-blocking ring can be used naturally to implement _multicast consumers_. That means that `you can have multiple non-blocking ring consumers reading from the same non-blocking ring producer`. All consumers will read all messages in the exact same order. A consumer can still fall behind and disconnect, but it will never miss a message or process a message out of order. The producer does not even know how many consumers it is multicasting to. In other words, `consumers can leave and join the ring at any moment` without impacting the producer.
 
 <img src="images/NonBlockingMcastRing.png" alt="NonBlockingMcastRing" width="50%" height="50%" />
 
