@@ -59,7 +59,7 @@ The _tripping over_ problem will _only_ happen when the consumer falls behind N 
 
 The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls below that threshold then its `availableToPoll()` method returns `-1`.
 
-Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, it does not make it zero. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
+Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, **it does not make it zero**. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
 ### Using a _checksum_ for each message
 
