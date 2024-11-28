@@ -30,7 +30,7 @@ import com.coralblocks.coralring.util.ObjectPool;
 /**
  * <p>
  * The implementation of a blocking {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
- * It can block if the ring becomes full, in other words, if the consumer on the other side is falling behind or not polling new messages fast enough.
+ * It can block if the ring becomes full, in other words, if the consumer on the other side is falling behind or not fetching new messages fast enough.
  * It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
@@ -67,7 +67,7 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	private long lastOfferedSeq;
 	private long maxSeqBeforeWrapping;
 	private final MemoryVolatileLong offerSequence;
-	private final MemoryVolatileLong pollSequence;
+	private final MemoryVolatileLong fetchSequence;
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
@@ -93,7 +93,7 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryVolatileLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
+		this.fetchSequence = new MemoryVolatileLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
 		this.dataList = new LinkedObjectList<E>(64);
@@ -164,7 +164,7 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 	}
 	
 	private final long calcMaxSeqBeforeWrapping() {
-		return pollSequence.get() + capacity;
+		return fetchSequence.get() + capacity;
 	}
 	
 	@Override
