@@ -30,7 +30,7 @@ import com.coralblocks.coralring.util.ObjectPool;
 /**
  * <p>
  * The implementation of a blocking broadcast {@link RingProducer} that uses shared memory instead of heap memory so that communication can happen across JVMs.
- * It can block if the ring becomes full, in other words, if the consumers on the other side are falling behind or not polling new messages fast enough.
+ * It can block if the ring becomes full, in other words, if the consumers on the other side are falling behind or not fetching new messages fast enough.
  * It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
@@ -65,7 +65,7 @@ public class BlockingBroadcastRingProducer<E extends MemorySerializable> impleme
 	private long lastOfferedSeq;
 	private long maxSeqBeforeWrapping;
 	private final MemoryVolatileLong offerSequence;
-	private final MemoryVolatileLong[] pollSequence;
+	private final MemoryVolatileLong[] fetchSequence;
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
@@ -93,9 +93,9 @@ public class BlockingBroadcastRingProducer<E extends MemorySerializable> impleme
 		this.dataAddress = headerAddress + headerSize;
 		this.builder = builder;
 		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryVolatileLong[numberOfConsumers];
-		for(int i = 0; i < pollSequence.length; i++) {
-			this.pollSequence[i] = new MemoryVolatileLong(headerAddress + (i + 1) * CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
+		this.fetchSequence = new MemoryVolatileLong[numberOfConsumers];
+		for(int i = 0; i < fetchSequence.length; i++) {
+			this.fetchSequence[i] = new MemoryVolatileLong(headerAddress + (i + 1) * CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		}
 		this.lastOfferedSeq = offerSequence.get();
 		this.dataPool = new LinkedObjectPool<E>(64, builder);
@@ -169,27 +169,27 @@ public class BlockingBroadcastRingProducer<E extends MemorySerializable> impleme
 		return builder;
 	}
 	
-	private final long minPollSequence() {
+	private final long minFetchSequence() {
 		long min = Long.MAX_VALUE;
-		for(int i = 0; i < this.pollSequence.length; i++) {
-			min = Math.min(this.pollSequence[i].get(), min);
+		for(int i = 0; i < this.fetchSequence.length; i++) {
+			min = Math.min(this.fetchSequence[i].get(), min);
 		}
 		return min;
 	}
 	
 	private final long calcMaxSeqBeforeWrapping() {
-		return minPollSequence() + capacity;
+		return minFetchSequence() + capacity;
 	}
 	
 	/**
 	 * This method disables a consumer and allows the producer to continue to operate and make progress without getting blocked
-	 * waiting for a slow consumer. This is useful for when a consumer has a problem and stops polling the ring. In that situation
+	 * waiting for a slow consumer. This is useful for when a consumer has a problem and stops fetching the ring. In that situation
 	 * the ring will get full, causing the producer to block, unless you disable the consumer.
 	 * 
 	 * @param consumerIndex the index of the consumer that you want to disable
 	 */
 	public final void disableConsumer(int consumerIndex) {
-		this.pollSequence[consumerIndex].set(Long.MAX_VALUE);
+		this.fetchSequence[consumerIndex].set(Long.MAX_VALUE);
 	}
 	
 	@Override

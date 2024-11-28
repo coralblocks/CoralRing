@@ -53,10 +53,10 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 	private final int capacity;
 	private final int capacityMinusOne;
 	private final E data;
-	private long lastPolledSeq;
-	private long pollCount = 0;
+	private long lastFetchedSeq;
+	private long fetchCount = 0;
 	private final MemoryVolatileLong offerSequence;
-	private final MemoryVolatileLong pollSequence;
+	private final MemoryVolatileLong fetchSequence;
 	private final int maxObjectSize;
 	private final Memory memory;
 	private final long headerAddress;
@@ -89,8 +89,8 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 		this.dataAddress = headerAddress + headerSize;
 		this.builder = builder;
 		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.pollSequence = new MemoryVolatileLong(headerAddress + (consumerIndex + 1) * CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
-		this.lastPolledSeq = pollSequence.get();
+		this.fetchSequence = new MemoryVolatileLong(headerAddress + (consumerIndex + 1) * CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
+		this.lastFetchedSeq = fetchSequence.get();
 		this.data = builder.newInstance();
 	}
 
@@ -144,13 +144,13 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 	}
 	
 	@Override
-	public final long getLastPolledSequence() {
-		return lastPolledSeq;
+	public final long getLastFetchedSequence() {
+		return lastFetchedSeq;
 	}
 	
 	@Override
-	public final void setLastPolledSequence(long lastPolledSeq) {
-		this.lastPolledSeq = lastPolledSeq;
+	public final void setLastFetchedSequence(long lastFetchedSeq) {
+		this.lastFetchedSeq = lastFetchedSeq;
 	}
 	
 	@Override
@@ -193,8 +193,8 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 	}
 	
 	@Override
-	public final long availableToPoll() {
-		return offerSequence.get() - lastPolledSeq;
+	public final long availableToFetch() {
+		return offerSequence.get() - lastFetchedSeq;
 	}
 	
 	private final long calcDataOffset(long index) {
@@ -210,40 +210,49 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 	}
 	
 	@Override
-	public final E poll() {
-		pollCount++;
-		int index = calcIndex(++lastPolledSeq);
+	public final E fetch(boolean remove) {
+		if (remove) return fetchTrue();
+		else return fetchFalse();
+	}
+	
+	@Override
+	public final E fetch() {
+		return fetch(true);
+	}
+	
+	private final E fetchTrue() {
+		fetchCount++;
+		int index = calcIndex(++lastFetchedSeq);
+		long offset = calcDataOffset(index);
+		data.readFrom(offset, memory);
+		return data;
+	}
+	
+	private final E fetchFalse() {
+		int index = calcIndex(lastFetchedSeq + 1);
 		long offset = calcDataOffset(index);
 		data.readFrom(offset, memory);
 		return data;
 	}
 	
 	@Override
-	public final E peek() {
-		int index = calcIndex(lastPolledSeq + 1);
-		long offset = calcDataOffset(index);
-		data.readFrom(offset, memory);
-		return data;
-	}
-
-	@Override
 	public final void rollBack() {
-		rollBack(pollCount);
+		rollBack(fetchCount);
 	}
 	
 	@Override
 	public final void rollBack(long count) {
-		if (count < 0 || count > pollCount) {
-			throw new RuntimeException("Invalid rollback request! polled=" + pollCount + " requested=" + count);
+		if (count < 0 || count > fetchCount) {
+			throw new RuntimeException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
 		}
-		lastPolledSeq -= count;
-		pollCount -= count;
+		lastFetchedSeq -= count;
+		fetchCount -= count;
 	}
 	
 	@Override
-	public final void donePolling() {
-		pollSequence.set(lastPolledSeq);
-		pollCount = 0;
+	public final void doneFetching() {
+		fetchSequence.set(lastFetchedSeq);
+		fetchCount = 0;
 	}
 	
 	@Override

@@ -81,16 +81,16 @@ public class NonBlockingRingTest {
 				
 				boolean isRunning = true;
 				while(isRunning) {
-					long avail = ringConsumer.availableToPoll(); // <=========
+					long avail = ringConsumer.availableToFetch(); // <=========
 					if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
-							Message m = ringConsumer.poll(); // <=========
+							Message m = ringConsumer.fetch(); // <=========
 							if (m == null) throw new RuntimeException("Bad checksum!");
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
-						ringConsumer.donePolling(); // <=========
+						ringConsumer.doneFetching(); // <=========
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while blocking (default and fastest wait strategy)
@@ -180,16 +180,16 @@ public class NonBlockingRingTest {
 				
 				boolean isRunning = true;
 				while(isRunning) {
-					long avail = ringConsumer.availableToPoll(); // <=========
+					long avail = ringConsumer.availableToFetch(); // <=========
 					if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
-							Message m = ringConsumer.poll(); // <=========
+							Message m = ringConsumer.fetch(); // <=========
 							if (m == null) throw new RuntimeException("Bad checksum!");
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
-						ringConsumer.donePolling(); // <=========
+						ringConsumer.doneFetching(); // <=========
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while blocking (default and fastest wait strategy)
@@ -268,7 +268,7 @@ public class NonBlockingRingTest {
 		producer.join(); // wait for producer to wrap the 1024 ring...
 		
 		final RingConsumer<Message> ringConsumer = new NonBlockingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename);
-		long avail = ringConsumer.availableToPoll();
+		long avail = ringConsumer.availableToFetch();
 		ringConsumer.close(true); // delete file
 		
 		Assert.assertEquals(-1, avail); // wrapped
@@ -295,12 +295,12 @@ public class NonBlockingRingTest {
 		}
 		ringProducer.flush();
 		
-		long avail = ringConsumer.availableToPoll();
+		long avail = ringConsumer.availableToFetch();
 		
 		Assert.assertEquals(4, avail);
 		
 		for(int i = 0; i < 4; i++) {
-			m = ringConsumer.poll();
+			m = ringConsumer.fetch();
 			Assert.assertEquals(i + 1, m.value);
 		}
 		
@@ -314,18 +314,18 @@ public class NonBlockingRingTest {
 		}
 		ringProducer.flush();
 		
-		avail = ringConsumer.availableToPoll();
+		avail = ringConsumer.availableToFetch();
 		
 		Assert.assertEquals(8, avail);
 		
 		for(int i = 0; i < 8; i++) {
-			m = ringConsumer.poll();
+			m = ringConsumer.fetch();
 			Assert.assertEquals(i + 1, m.value);
 		}
 		
 		// check ring is empty
 		
-		avail = ringConsumer.availableToPoll();
+		avail = ringConsumer.availableToFetch();
 		
 		Assert.assertEquals(0, avail); // empty
 		
@@ -337,7 +337,7 @@ public class NonBlockingRingTest {
 		}
 		ringProducer.flush();
 		
-		avail = ringConsumer.availableToPoll();
+		avail = ringConsumer.availableToFetch();
 		
 		Assert.assertEquals(-1, avail); // wrapped
 		
@@ -398,16 +398,16 @@ public class NonBlockingRingTest {
 				
 				boolean isRunning = true;
 				while(isRunning) {
-					long avail = ringConsumer.availableToPoll(); // <=========
+					long avail = ringConsumer.availableToFetch(); // <=========
 					if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 					if (avail > 0) {
 						for(long i = 0; i < avail; i++) {
-							Message m = ringConsumer.poll(); // <=========
+							Message m = ringConsumer.fetch(); // <=========
 							if (m == null) throw new RuntimeException("Consumer tripped over producer! (checksum failed)");
 							messagesReceived.add(m.value); // save just the long value from this message
 							if (m.last) isRunning = false; // I'm done!
 						}
-						ringConsumer.donePolling(); // <=========
+						ringConsumer.doneFetching(); // <=========
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while blocking (default and fastest wait strategy)

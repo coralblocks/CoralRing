@@ -33,7 +33,7 @@ import com.coralblocks.coralring.util.MemorySerializable;
  * on the other side is falling behind or not offering new messages fast enough. It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
- * If the consumer is too slow and falls behind, its {@link NonBlockingRingConsumer#availableToPoll()} method will return <code>-1</code> to indicate that
+ * If the consumer is too slow and falls behind, its {@link NonBlockingRingConsumer#availableToFetch()} method will return <code>-1</code> to indicate that
  * the consumer has fallen behind too much, will lose messages and cannot proceed.
  * </p>
  * <p>
@@ -67,8 +67,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	private final int capacity;
 	private final int capacityMinusOne;
 	private final E data;
-	private long lastPolledSeq;
-	private long pollCount = 0;
+	private long lastFetchedSeq;
+	private long fetchCount = 0;
 	private final MemoryVolatileLong offerSequence;
 	private final int maxObjectSize;
 	private final Memory memory;
@@ -103,7 +103,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this.dataAddress = headerAddress + HEADER_SIZE;
 		this.builder = builder;
 		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
-		this.lastPolledSeq = 0;
+		this.lastFetchedSeq = 0;
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
 		if (checkChecksum) {
@@ -283,13 +283,13 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
-	public final long getLastPolledSequence() {
-		return lastPolledSeq;
+	public final long getLastFetchedSequence() {
+		return lastFetchedSeq;
 	}
 	
 	@Override
-	public final void setLastPolledSequence(long lastPolledSeq) {
-		this.lastPolledSeq = lastPolledSeq;
+	public final void setLastFetchedSequence(long lastFetchedSeq) {
+		this.lastFetchedSeq = lastFetchedSeq;
 	}
 	
 	@Override
@@ -328,8 +328,8 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
-	public final long availableToPoll() {
-		long avail = offerSequence.get() - lastPolledSeq;
+	public final long availableToFetch() {
+		long avail = offerSequence.get() - lastFetchedSeq;
 		if (avail > fallBehindCapacity) return -1; // wrapped
 		return avail;
 	}
@@ -347,9 +347,19 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
-	public final E poll() {
-		pollCount++;
-		int index = calcIndex(++lastPolledSeq);
+	public final E fetch(boolean remove) {
+		if (remove) return fetchTrue();
+		else return fetchFalse();
+	}
+	
+	@Override
+	public final E fetch() {
+		return fetch(true);
+	}
+	
+	private final E fetchTrue() {
+		fetchCount++;
+		int index = calcIndex(++lastFetchedSeq);
 		long offset = calcDataOffset(index);
 		
 		long checksum = 0L;
@@ -361,15 +371,42 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		data.readFrom(offset + CHECKSUM_LENGTH, memory);
 		
 		if (checkChecksum) {
-			bbMemory.putLong(bbMemory.getPointer(), lastPolledSeq);
+			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq);
 			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 			ByteBuffer bb = bbMemory.getByteBuffer();
 			bb.limit(len).position(0);
 			long calculatedChecksum = FastHash.hash64(bb);
 			
 			if (checksum != calculatedChecksum) {
-				pollCount--;
-				lastPolledSeq--;
+				fetchCount--;
+				lastFetchedSeq--;
+				return null;
+			}
+		}
+		
+		return data;
+	}
+	
+	private final E fetchFalse() {
+		int index = calcIndex(lastFetchedSeq + 1);
+		long offset = calcDataOffset(index);
+		
+		long checksum = 0L;
+		
+		if (checkChecksum) {
+			checksum = memory.getLong(offset);
+		}
+		
+		data.readFrom(offset + CHECKSUM_LENGTH, memory);
+		
+		if (checkChecksum) {
+			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq + 1);
+			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
+			ByteBuffer bb = bbMemory.getByteBuffer();
+			bb.limit(len).position(0);
+			long calculatedChecksum = FastHash.hash64(bb);
+			
+			if (checksum != calculatedChecksum) {
 				return null;
 			}
 		}
@@ -378,50 +415,22 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 	}
 	
 	@Override
-	public final E peek() {
-		int index = calcIndex(lastPolledSeq + 1);
-		long offset = calcDataOffset(index);
-		
-		long checksum = 0L;
-		
-		if (checkChecksum) {
-			checksum = memory.getLong(offset);
-		}
-		
-		data.readFrom(offset + CHECKSUM_LENGTH, memory);
-		
-		if (checkChecksum) {
-			bbMemory.putLong(bbMemory.getPointer(), lastPolledSeq + 1);
-			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
-			ByteBuffer bb = bbMemory.getByteBuffer();
-			bb.limit(len).position(0);
-			long calculatedChecksum = FastHash.hash64(bb);
-			
-			if (checksum != calculatedChecksum) {
-				return null;
-			}
-		}
-		
-		return data;
-	}
-
-	@Override
 	public final void rollBack() {
-		rollBack(pollCount);
+		rollBack(fetchCount);
 	}
 	
 	@Override
 	public final void rollBack(long count) {
-		if (count < 0 || count > pollCount) {
-			throw new RuntimeException("Invalid rollback request! polled=" + pollCount + " requested=" + count);
+		if (count < 0 || count > fetchCount) {
+			throw new RuntimeException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
 		}
-		lastPolledSeq -= count;
-		pollCount -= count;
+		lastFetchedSeq -= count;
+		fetchCount -= count;
 	}
 	
 	@Override
-	public final void donePolling() {
-		pollCount = 0;
+	public final void doneFetching() {
+		fetchCount = 0;
 	}
 	
 	@Override

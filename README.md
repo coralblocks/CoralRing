@@ -44,7 +44,7 @@ Note that for maximum performance the producer and consumers should busy spin wh
 
 Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
 ```Java
-long avail = ringConsumer.availableToPoll();
+long avail = ringConsumer.availableToFetch();
 			
 if (avail == 0) continue; // busy spin as the ring is empty
 			
@@ -57,7 +57,7 @@ This lagging consumer problem can be mitigated by creating a large memory-mapped
 
 The _tripping over_ problem will _only_ happen when the consumer falls behind N messages, where N is equal to the capacity of the ring. If it falls behind a little more, it simply disconnects. If it falls behind a little less it _should_ still be able to read the next message without any issues. `So the bigger the capacity of the ring the less likely it is for the consumer to trip over the producer` because the more room it has to fall behind safely. Therefore, to reduce the chances for the consumer to get close to the edge, we can introduce a _fall behind tolerance_, in other words, `we can make the consumer give up and disconnect early when it falls to a percentage P of the capacity of the ring`.
 
-The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls below that threshold then its `availableToPoll()` method returns `-1`.
+The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls below that threshold then its `availableToFetch()` method returns `-1`.
 
 Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, **it does not make it zero**. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
@@ -65,11 +65,11 @@ Unfortantely, although this will further reduce the chances for the consumer to 
 
 To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it. Although we use a _fast_ hash algorithm ([_xxHash_](https://github.com/apache/drill/blob/master/exec/java-exec/src/main/java/org/apache/drill/exec/expr/fn/impl/XXHash.java](https://xxhash.com/))) to calculate the checksum, there is a small performance penalty to pay when you choose this approach.
 
-The constructor of `NonBlockingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `poll()` or `peek()` :
+The constructor of `NonBlockingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `fetch()`:
 ```Java
 for(long i = 0; i < avail; i++) {
       
-    MutableLong ml = ringConsumer.poll();
+    MutableLong ml = ringConsumer.fetch();
       
     if (ml == null) {
         throw new RuntimeException("The consumer tripped over the producer! (checksum failed)");

@@ -36,19 +36,19 @@ public class BlockingConsumer {
 		long busySpinCount = 0;
 		
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
-								+ " with sleepTime of " + sleepTime + " nanoseconds (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
+								+ " with sleepTime of " + sleepTime + " nanoseconds (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
 		while(isRunning) {
-			long avail = ringConsumer.availableToPoll(); // <=========
+			long avail = ringConsumer.availableToFetch(); // <=========
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
-					Message m = ringConsumer.poll(); // <=========
+					Message m = ringConsumer.fetch(); // <=========
 					messagesReceived.add(m.value); // save just the long value from this message
 					if (m.last) isRunning = false; // I'm done!
 				}
-				ringConsumer.donePolling(); // <=========
+				ringConsumer.doneFetching(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {

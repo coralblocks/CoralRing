@@ -42,12 +42,12 @@ public class NonBlockingConsumer {
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages,"
 								+ (checkChecksum ? "" : " not") + " checking checksum"
 								+ " and with fall behing tolerance " + fallBehindTolerance
-								+ " (lastPolledSeq=" + ringConsumer.getLastPolledSequence() + ")"
+								+ " (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
 		OUTER: while(isRunning) {
-			long avail = ringConsumer.availableToPoll(); // <=========
+			long avail = ringConsumer.availableToFetch(); // <=========
 			if (avail == -1) {
 				// fell behind (bye bye!)
 				System.out.println("=====> Consumer fell behind! (ring wrapped)");
@@ -55,7 +55,7 @@ public class NonBlockingConsumer {
 			}
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
-					Message m = ringConsumer.poll(); // <=========
+					Message m = ringConsumer.fetch(); // <=========
 					if (m == null) {
 						// consumer tripped over producer
 						System.out.println("=====> Consumer tripped over producer! (checksum failed)");
@@ -64,7 +64,7 @@ public class NonBlockingConsumer {
 					messagesReceived.add(m.value); // save just the long value from this message
 					if (m.last) isRunning = false; // I'm done!
 				}
-				ringConsumer.donePolling(); // <=========
+				ringConsumer.doneFetching(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 				if (sleepTime > 0) sleepFor(sleepTime);
 			} else {

@@ -49,18 +49,18 @@ public interface RingConsumer<E extends MemorySerializable> {
 	public Builder<E> getBuilder();
 	
 	/**
-	 * The sequence number of the last message polled by the ring consumer.
+	 * The sequence number of the last message fetched by the ring consumer.
 	 * 
-	 * @return the sequence number of the last polled message
+	 * @return the sequence number of the last fetched message
 	 */
-	public long getLastPolledSequence();
+	public long getLastFetchedSequence();
 	
 	/**
-	 * Sets the sequence number of the last message polled by the ring consumer.
+	 * Sets the sequence number of the last message fetched by the ring consumer.
 	 * 
-	 * @param lastPolledSequence the sequence number of the last polled message
+	 * @param lastFetchedSequence the sequence number of the last fetched message
 	 */
-	public void setLastPolledSequence(long lastPolledSequence);
+	public void setLastFetchedSequence(long lastFetchedSequence);
 	
 	/**
 	 * The sequence number of the last message offered by the ring producer from where this ring consumer is reading messages from.
@@ -70,42 +70,43 @@ public interface RingConsumer<E extends MemorySerializable> {
 	public long getLastOfferedSequence();
 	
 	/**
-	 * The number of messages that can be polled by the ring consumer.
+	 * The number of messages that can be fetched by the ring consumer.
 	 * 
-	 * @return the number of messages available to be polled
+	 * @return the number of messages available to be fetched
 	 */
-	public long availableToPoll();
+	public long availableToFetch();
 	
 	/**
-	 * Poll the next available message.
+	 * Fetch the next available message.
+	 * 
+	 * @param remove true to remove the object (false if you just want to inspect but not to remove)
+	 * @return the next available message
+	 */
+	public E fetch(boolean remove);
+	
+	/**
+	 * Fetch the next available message. This message simply calls {@link fetch(boolean)} with <code>true</code>.
 	 * 
 	 * @return the next available message
 	 */
-	public E poll();
+	public E fetch();
 	
 	/**
-	 * Peek, but don't poll, the next available message.
-	 * 
-	 * @return the next available message
-	 */
-	public E peek();
-	
-	/**
-	 * Roll back (and pretend they were never polled) any previously polled messages by the ring consumer.
+	 * Roll back (and pretend they were never fetched) any previously fetched messages by the ring consumer.
 	 */
 	public void rollBack();
 	
 	/**
-	 * Roll back (and pretend they were never polled) some messages previously polled by the ring consumer.
+	 * Roll back (and pretend they were never fetched) some messages previously fetched by the ring consumer.
 	 * 
-	 * @param count the number of previous polls to roll back
+	 * @param count the number of previous fetches to roll back
 	 */
 	public void rollBack(long count);
 	
 	/**
-	 * Must be called to indicate that the ring consumer has finished polling the available messages.
+	 * Must be called to indicate that the ring consumer has finished fetching the available messages.
 	 */
-	public void donePolling();
+	public void doneFetching();
 	
 	/**
 	 * Closes this ring consumer and releases any of its associated resources, like its memory.

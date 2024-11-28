@@ -92,16 +92,16 @@ public class BlockingBroadcastRingTest {
 					
 					boolean isRunning = true;
 					while(isRunning) {
-						long avail = ringConsumer.availableToPoll(); // <=========
+						long avail = ringConsumer.availableToFetch(); // <=========
 						if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 						if (avail > 0) {
 							for(long i = 0; i < avail; i++) {
-								Message m = ringConsumer.poll(); // <=========
+								Message m = ringConsumer.fetch(); // <=========
 								if (m == null) throw new RuntimeException("Bad checksum!");
 								mr.add(m.value); // save just the long value from this message
 								if (m.last) isRunning = false; // I'm done!
 							}
-							ringConsumer.donePolling(); // <=========
+							ringConsumer.doneFetching(); // <=========
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while blocking (default and fastest wait strategy)
@@ -214,16 +214,16 @@ public class BlockingBroadcastRingTest {
 					
 					boolean isRunning = true;
 					while(isRunning) {
-						long avail = ringConsumer.availableToPoll(); // <=========
+						long avail = ringConsumer.availableToFetch(); // <=========
 						if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 						if (avail > 0) {
 							for(long i = 0; i < avail; i++) {
-								Message m = ringConsumer.poll(); // <=========
+								Message m = ringConsumer.fetch(); // <=========
 								if (m == null) throw new RuntimeException("Bad checksum!");
 								mr.add(m.value); // save just the long value from this message
 								if (m.last) isRunning = false; // I'm done!
 							}
-							ringConsumer.donePolling(); // <=========
+							ringConsumer.doneFetching(); // <=========
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while blocking (default and fastest wait strategy)
@@ -333,16 +333,16 @@ public class BlockingBroadcastRingTest {
 					
 					boolean isRunning = true;
 					while(isRunning) {
-						long avail = ringConsumer.availableToPoll(); // <=========
+						long avail = ringConsumer.availableToFetch(); // <=========
 						if (avail == -1) throw new RuntimeException("Consumer fell behind!");
 						if (avail > 0) {
 							for(long i = 0; i < avail; i++) {
-								Message m = ringConsumer.poll(); // <=========
+								Message m = ringConsumer.fetch(); // <=========
 								if (m == null) throw new RuntimeException("Consumer tripped over producer! (checksum failed)");
 								mr.add(m.value); // save just the long value from this message
 								if (m.last) isRunning = false; // I'm done!
 							}
-							ringConsumer.donePolling(); // <=========
+							ringConsumer.doneFetching(); // <=========
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while blocking (default and fastest wait strategy)

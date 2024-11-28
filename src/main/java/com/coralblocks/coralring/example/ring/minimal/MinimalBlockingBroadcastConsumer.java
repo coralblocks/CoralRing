@@ -35,20 +35,20 @@ public class MinimalBlockingBroadcastConsumer {
 		
 		while(isRunning) {
 			
-			long avail = ringConsumer.availableToPoll(); // read available batches as fast as possible
+			long avail = ringConsumer.availableToFetch(); // read available batches as fast as possible
 			
 			if (avail == 0) continue; // busy spin
 			
 			for(long i = 0; i < avail; i++) {
 				
-				MutableLong ml = ringConsumer.poll();
+				MutableLong ml = ringConsumer.fetch();
 				
 				System.out.print(ml.get());
 				
 				if (ml.get() == messagesToSend - 1) isRunning = false; // done receiving all messages
 			}
 			
-			ringConsumer.donePolling(); // don't forget to notify producer
+			ringConsumer.doneFetching(); // don't forget to notify producer
 		}
 		
 		ringConsumer.close(true);
