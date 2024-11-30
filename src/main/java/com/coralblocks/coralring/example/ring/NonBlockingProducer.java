@@ -22,8 +22,8 @@ import com.coralblocks.coralring.ring.RingProducer;
 
 public class NonBlockingProducer {
 	
-	final static String FILENAME = "shared-ring.mmap";
-	final static int RING_CAPACITY = 1024 * 16;
+	static final String FILENAME = "shared-ring.mmap";
+	static final int RING_CAPACITY = 1024 * 16;
 	
 	public static void main(String[] args) {
 		
@@ -68,7 +68,7 @@ public class NonBlockingProducer {
 		System.out.println("Producer busy-spin count: " + busySpinCount);
 	}
 	
-    private final static void sleepFor(long nanos) {
+    private static final void sleepFor(long nanos) {
         long time = System.nanoTime();
         while((System.nanoTime() - time) < nanos);
     }

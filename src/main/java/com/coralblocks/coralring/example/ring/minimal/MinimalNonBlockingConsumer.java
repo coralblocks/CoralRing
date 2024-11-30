@@ -20,7 +20,7 @@ import com.coralblocks.coralring.ring.RingConsumer;
 
 public class MinimalNonBlockingConsumer {
 	
-	private final static String FILENAME = MinimalBlockingProducer.FILENAME;
+	private static final String FILENAME = MinimalBlockingProducer.FILENAME;
 	
 	public static void main(String[] args) {
 		

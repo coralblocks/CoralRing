@@ -49,7 +49,7 @@ public final class FastHash {
 	static final long PRIME64_4 = 0x85ebca77c2b2ae63L;
 	static final long PRIME64_5 = 0x27d4eb2f165667c5L;
 
-	private final static long hash64bytes(final ByteBuffer buffer, long seed) {
+	private static final long hash64bytes(final ByteBuffer buffer, long seed) {
 
 		final int start = buffer.position();
 		final int bEnd = buffer.limit();
@@ -156,7 +156,7 @@ public final class FastHash {
 		return applyFinalHashComputation(h64);
 	}
 
-	private final static long applyFinalHashComputation(long h64) {
+	private static final long applyFinalHashComputation(long h64) {
 		h64 ^= h64 >>> 33;
 		h64 *= PRIME64_2;
 		h64 ^= h64 >>> 29;
@@ -167,23 +167,23 @@ public final class FastHash {
 	
 	public static final int SEED = 7;
 	
-	public final static long hash64(ByteBuffer buffer) {
+	public static final long hash64(ByteBuffer buffer) {
 		return hash64(buffer, SEED);
 	}
 	
-	public final static long hash64(ByteBuffer buffer, long seed) {
+	public static final long hash64(ByteBuffer buffer, long seed) {
 		return hash64bytes(buffer, seed);
 	}
 
-	public final static int hash32(ByteBuffer buffer) {
+	public static final int hash32(ByteBuffer buffer) {
 		return hash32(buffer, SEED);
 	}
 	
-	public final static int hash32(ByteBuffer buffer, int seed) {
+	public static final int hash32(ByteBuffer buffer, int seed) {
 		return convert64To32(hash64(buffer, seed));
 	}
 	
-	private final static int convert64To32(long val) {
+	private static final int convert64To32(long val) {
 		return (int) (val & 0x00FFFFFFFF);
 	}
 }

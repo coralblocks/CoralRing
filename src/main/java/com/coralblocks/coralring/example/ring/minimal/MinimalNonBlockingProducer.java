@@ -20,7 +20,7 @@ import com.coralblocks.coralring.ring.RingProducer;
 
 public class MinimalNonBlockingProducer {
 	
-	final static String FILENAME = "minimal-blocking.mmap";
+	static final String FILENAME = "minimal-blocking.mmap";
 	
 	public static void main(String[] args) {
 		

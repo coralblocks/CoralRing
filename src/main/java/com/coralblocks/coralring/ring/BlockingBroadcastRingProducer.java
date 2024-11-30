@@ -49,13 +49,13 @@ import com.coralblocks.coralring.util.ObjectPool;
 public class BlockingBroadcastRingProducer<E extends MemorySerializable> implements RingProducer<E> {
 	
 	// The default capacity for this shared memory ring
-	final static int DEFAULT_CAPACITY = 1024;
+	static final int DEFAULT_CAPACITY = 1024;
 	
 	// So that the sequence lands in the middle of the cache line
-	final static int SEQ_PREFIX_PADDING = 24;
+	static final int SEQ_PREFIX_PADDING = 24;
 
 	// A typical CPU cache line
-	final static int CPU_CACHE_LINE = 64;
+	static final int CPU_CACHE_LINE = 64;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -160,7 +160,7 @@ public class BlockingBroadcastRingProducer<E extends MemorySerializable> impleme
 		return capacity;
 	}
 	
-	private final static long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
+	private static final long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
 		return headerSize + ((long) capacity) * maxObjectSize;
 	}
 

@@ -23,7 +23,7 @@ import com.coralblocks.coralring.util.MemorySerializable;
  */
 public class MutableLong implements MemorySerializable {
 	
-	private final static int LONG_SIZE = 8; // 8 bytes
+	private static final int LONG_SIZE = 8; // 8 bytes
 	
 	private long value;
 	

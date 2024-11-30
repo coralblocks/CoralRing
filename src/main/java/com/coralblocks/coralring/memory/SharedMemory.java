@@ -214,14 +214,14 @@ public class SharedMemory implements Memory {
 	 * @param filename the name of the file
 	 * @return the size in bytes of the file
 	 */
-	public final static long findFileSize(String filename) {
+	public static final long findFileSize(String filename) {
 		File file = new File(filename);
 		if (!file.exists()) throw new RuntimeException("File not found: " + filename);
 		if (file.isDirectory()) throw new RuntimeException("File is a directory: " + filename);
 		return file.length();
 	}
 	
-	private final static String createFilename(long size) {
+	private static final String createFilename(long size) {
 		if (size <= 0) throw new IllegalArgumentException("Cannot create file with this size: " + size);
 		return SharedMemory.class.getSimpleName() + "-" + size + ".mmap";
 	}

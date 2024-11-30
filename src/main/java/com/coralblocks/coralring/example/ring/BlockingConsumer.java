@@ -23,7 +23,7 @@ import com.coralblocks.coralring.ring.RingConsumer;
 
 public class BlockingConsumer {
 	
-	final static String FILENAME = BlockingProducer.FILENAME;
+	static final String FILENAME = BlockingProducer.FILENAME;
 	
 	public static void main(String[] args) {
 		
@@ -91,7 +91,7 @@ public class BlockingConsumer {
 	    return true;
 	}
 	
-    private final static void sleepFor(long nanos) {
+    private static final void sleepFor(long nanos) {
         long time = System.nanoTime();
         while((System.nanoTime() - time) < nanos);
     }

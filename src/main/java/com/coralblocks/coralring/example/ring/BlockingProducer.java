@@ -22,7 +22,7 @@ import com.coralblocks.coralring.ring.RingProducer;
 
 public class BlockingProducer {
 	
-	final static String FILENAME = "shared-ring.mmap";
+	static final String FILENAME = "shared-ring.mmap";
 	
 	public static void main(String[] args) {
 		
@@ -65,7 +65,7 @@ public class BlockingProducer {
 		System.out.println("Producer busy-spin count: " + busySpinCount);
 	}
 	
-    private final static void sleepFor(long nanos) {
+    private static final void sleepFor(long nanos) {
         long time = System.nanoTime();
         while((System.nanoTime() - time) < nanos);
     }

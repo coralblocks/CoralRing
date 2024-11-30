@@ -38,7 +38,7 @@ public class PayloadByteBufferMessage implements MemorySerializable {
 	 * @param maxPayloadSize the max possible payload size
 	 * @return the max size of this object
 	 */
-	public final static int getMaxSize(int maxPayloadSize) {
+	public static final int getMaxSize(int maxPayloadSize) {
 		return 4 /* payloadSize int size */ + maxPayloadSize;
 	}
 	

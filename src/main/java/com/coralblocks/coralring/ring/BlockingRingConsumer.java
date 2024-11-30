@@ -43,13 +43,13 @@ import com.coralblocks.coralring.util.MemorySerializable;
  */
 public class BlockingRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
-	private final static int DEFAULT_CAPACITY = BlockingRingProducer.DEFAULT_CAPACITY;
+	private static final int DEFAULT_CAPACITY = BlockingRingProducer.DEFAULT_CAPACITY;
 	
-	private final static int SEQ_PREFIX_PADDING = BlockingRingProducer.SEQ_PREFIX_PADDING;
+	private static final int SEQ_PREFIX_PADDING = BlockingRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int CPU_CACHE_LINE = BlockingRingProducer.CPU_CACHE_LINE;
+	private static final int CPU_CACHE_LINE = BlockingRingProducer.CPU_CACHE_LINE;
 	
-	private final static int HEADER_SIZE = BlockingRingProducer.HEADER_SIZE;
+	private static final int HEADER_SIZE = BlockingRingProducer.HEADER_SIZE;
 	
 	private final int capacity;
 	private final int capacityMinusOne;

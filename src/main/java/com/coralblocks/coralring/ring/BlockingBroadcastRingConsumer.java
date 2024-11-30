@@ -44,11 +44,11 @@ import com.coralblocks.coralring.util.MemorySerializable;
  */
 public class BlockingBroadcastRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
-	private final static int DEFAULT_CAPACITY = BlockingBroadcastRingProducer.DEFAULT_CAPACITY;
+	private static final int DEFAULT_CAPACITY = BlockingBroadcastRingProducer.DEFAULT_CAPACITY;
 	
-	private final static int SEQ_PREFIX_PADDING = BlockingBroadcastRingProducer.SEQ_PREFIX_PADDING;
+	private static final int SEQ_PREFIX_PADDING = BlockingBroadcastRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int CPU_CACHE_LINE = BlockingBroadcastRingProducer.CPU_CACHE_LINE;
+	private static final int CPU_CACHE_LINE = BlockingBroadcastRingProducer.CPU_CACHE_LINE;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -163,11 +163,11 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 		return memory;
 	}
 	
-	private final static long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
+	private static final long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
 		return headerSize + ((long) capacity) * maxObjectSize;
 	}
 	
-	private final static int findCapacityFromFile(String filename, int maxObjectSize, int numberOfConsumers) {
+	private static final int findCapacityFromFile(String filename, int maxObjectSize, int numberOfConsumers) {
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
@@ -175,7 +175,7 @@ public class BlockingBroadcastRingConsumer<E extends MemorySerializable> impleme
 		return (int) ((totalMemorySize - headerSize) / maxObjectSize);
 	}
 	
-	private final static int findNumberOfConsumersFromFile(String filename, int maxObjectSize, int capacity) {
+	private static final int findNumberOfConsumersFromFile(String filename, int maxObjectSize, int capacity) {
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();

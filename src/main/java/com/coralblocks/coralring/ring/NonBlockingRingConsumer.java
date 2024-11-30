@@ -50,19 +50,19 @@ import com.coralblocks.coralring.util.MemorySerializable;
  */
 public class NonBlockingRingConsumer<E extends MemorySerializable> implements RingConsumer<E> {
 	
-	private final static int DEFAULT_CAPACITY = NonBlockingRingProducer.DEFAULT_CAPACITY;
+	private static final int DEFAULT_CAPACITY = NonBlockingRingProducer.DEFAULT_CAPACITY;
 	
-	private final static int SEQ_PREFIX_PADDING = NonBlockingRingProducer.SEQ_PREFIX_PADDING;
+	private static final int SEQ_PREFIX_PADDING = NonBlockingRingProducer.SEQ_PREFIX_PADDING;
 
-	private final static int HEADER_SIZE = NonBlockingRingProducer.HEADER_SIZE;
+	private static final int HEADER_SIZE = NonBlockingRingProducer.HEADER_SIZE;
 	
-	private final static int CHECKSUM_LENGTH = NonBlockingRingProducer.CHECKSUM_LENGTH;
+	private static final int CHECKSUM_LENGTH = NonBlockingRingProducer.CHECKSUM_LENGTH;
 	
-	private final static boolean DEFAULT_CHECK_CHECKSUM = NonBlockingRingProducer.DEFAULT_WRITE_CHECKSUM;
+	private static final boolean DEFAULT_CHECK_CHECKSUM = NonBlockingRingProducer.DEFAULT_WRITE_CHECKSUM;
 	
-	private final static int SEQUENCE_LENGTH = NonBlockingRingProducer.SEQUENCE_LENGTH;
+	private static final int SEQUENCE_LENGTH = NonBlockingRingProducer.SEQUENCE_LENGTH;
 	
-	private final static float FALL_BEHIND_TOLERANCE = 1.0f;
+	private static final float FALL_BEHIND_TOLERANCE = 1.0f;
 	
 	private final int capacity;
 	private final int capacityMinusOne;
@@ -272,7 +272,7 @@ public class NonBlockingRingConsumer<E extends MemorySerializable> implements Ri
 		this(DEFAULT_CAPACITY, maxObjectSize, Builder.createBuilder(klass), filename, DEFAULT_CHECK_CHECKSUM, fallBehindTolerance);
 	}
 	
-	private final static int calcFallBehindCapacity(int capacity, float fallBehindTolerance) {
+	private static final int calcFallBehindCapacity(int capacity, float fallBehindTolerance) {
 		if (fallBehindTolerance > 1 || fallBehindTolerance <= 0) {
 			throw new IllegalArgumentException("Invalid fallBehindTolerance: " + fallBehindTolerance);
 		}

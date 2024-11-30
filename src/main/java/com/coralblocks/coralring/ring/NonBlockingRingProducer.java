@@ -52,25 +52,25 @@ import com.coralblocks.coralring.util.ObjectPool;
 public class NonBlockingRingProducer<E extends MemorySerializable> implements RingProducer<E> {
 	
 	// The default capacity for this shared memory ring
-	final static int DEFAULT_CAPACITY = 1024;
+	static final int DEFAULT_CAPACITY = 1024;
 	
 	// So that the sequence lands in the middle of the cache line
-	final static int SEQ_PREFIX_PADDING = 24;
+	static final int SEQ_PREFIX_PADDING = 24;
 
 	// A typical CPU cache line
-	final static int CPU_CACHE_LINE = 64;
+	static final int CPU_CACHE_LINE = 64;
 	
 	// The length of the checksum that can be written with every message
-	final static int CHECKSUM_LENGTH = 8;
+	static final int CHECKSUM_LENGTH = 8;
 	
 	// The length of the sequence number used to calculate the checksum
-	final static int SEQUENCE_LENGTH = 8; // long
+	static final int SEQUENCE_LENGTH = 8; // long
 	
 	// One cache line for the producer sequence
-	final static int HEADER_SIZE = CPU_CACHE_LINE;
+	static final int HEADER_SIZE = CPU_CACHE_LINE;
 	
 	// The default mode is to not write the checksum
-	final static boolean DEFAULT_WRITE_CHECKSUM = false;
+	static final boolean DEFAULT_WRITE_CHECKSUM = false;
 	
 	private final int capacity;
 	private final int capacityMinusOne;

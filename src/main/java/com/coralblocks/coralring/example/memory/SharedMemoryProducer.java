@@ -56,7 +56,7 @@ public class SharedMemoryProducer {
 		System.out.println("\nProducer DONE!");
 	}
 	
-    private final static void sleepFor(long nanos) {
+    private static final void sleepFor(long nanos) {
         long time = System.nanoTime();
         while((System.nanoTime() - time) < nanos);
     }

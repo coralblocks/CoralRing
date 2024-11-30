@@ -49,7 +49,7 @@ public class MathUtils {
 	 *  
 	 * @param number the number to check
 	 */
-	public final static void ensurePowerOfTwo(int number) {
+	public static final void ensurePowerOfTwo(int number) {
 		ensurePowerOfTwo((long) number);
 	}
 	
@@ -58,7 +58,7 @@ public class MathUtils {
 	 *  
 	 * @param number the number to check
 	 */
-	public final static void ensurePowerOfTwo(long number) {
+	public static final void ensurePowerOfTwo(long number) {
 		if (!isPowerOfTwo(number)) {
 			throw new IllegalArgumentException("Not a power of two: " + number);
 		}

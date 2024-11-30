@@ -23,7 +23,7 @@ import java.nio.ByteOrder;
  */
 public class ByteBufferMemory implements Memory {
 	
-	public final static boolean USE_DIRECT_BYTE_BUFFER = true;
+	public static final boolean USE_DIRECT_BYTE_BUFFER = true;
 	
 	private ByteBuffer bb;
 	

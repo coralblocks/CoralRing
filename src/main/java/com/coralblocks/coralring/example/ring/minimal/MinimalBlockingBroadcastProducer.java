@@ -20,8 +20,8 @@ import com.coralblocks.coralring.ring.RingProducer;
 
 public class MinimalBlockingBroadcastProducer {
 	
-	final static String FILENAME = "minimal-blocking-bcast.mmap";
-	final static int NUMBER_OF_CONSUMERS = 2;
+	static final String FILENAME = "minimal-blocking-bcast.mmap";
+	static final int NUMBER_OF_CONSUMERS = 2;
 	
 	public static void main(String[] args) {
 		

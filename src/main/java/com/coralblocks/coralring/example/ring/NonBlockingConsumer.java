@@ -23,8 +23,8 @@ import com.coralblocks.coralring.ring.RingConsumer;
 
 public class NonBlockingConsumer {
 	
-	final static String FILENAME = NonBlockingProducer.FILENAME;
-	final static int RING_CAPACITY = NonBlockingProducer.RING_CAPACITY;
+	static final String FILENAME = NonBlockingProducer.FILENAME;
+	static final int RING_CAPACITY = NonBlockingProducer.RING_CAPACITY;
 	
 	public static void main(String[] args) {
 		
@@ -107,7 +107,7 @@ public class NonBlockingConsumer {
 	    return true;
 	}
 	
-    private final static void sleepFor(long nanos) {
+    private static final void sleepFor(long nanos) {
         long time = System.nanoTime();
         while((System.nanoTime() - time) < nanos);
     }
