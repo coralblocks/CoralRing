@@ -101,4 +101,4 @@ A non-blocking ring can be used naturally to implement _multicast consumers_. Th
 
 <img src="images/NonBlockingMcastRing.png" alt="NonBlockingMcastRing" width="50%" height="50%" />
 
-CoralRing is great for threads running in different JVMs. But how about threads running inside the _same JVM_? For that you can check our [CoralQueue](https://github.com/coralblocks/CoralQueue) project which is a collection of circular data structures for inter-thread communication in Java.
+CoralRing is great for threads running in different JVMs. But what about threads running inside the _same JVM_? For that you can check our [CoralQueue](https://github.com/coralblocks/CoralQueue) project which is a collection of circular data structures for inter-thread communication in Java.
