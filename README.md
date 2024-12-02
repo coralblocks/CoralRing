@@ -14,7 +14,7 @@ For some performance numbers you can check [this link](https://www.coralblocks.c
 
 <img src="images/BlockingRing.png" alt="BlockingRing" width="50%" height="50%" />
 
-**NOTE:** By _blocking_ we want to mean that the producer will have to block on a full ring by waiting around `nextToDispatch()` until it returns an object. The consumer always has to block on an empty ring.
+**NOTE:** By _blocking_ we want to mean that the producer will have to block on a full ring by waiting around `nextToDispatch()` until it returns an object. On the other hand, the consumer always has to block on an empty ring.
 
 Because the ring is a _bounded_ circular queue, the first approach is to have a _blocking_ producer and consumer. In other words, the ring producer will block (_wait_) when the ring is full and the ring consumer will block (_wait_) when the ring is empty. Basically a slow consumer will cause the producer to block, waiting for space to become available in the ring. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
 
@@ -44,7 +44,7 @@ Note that for maximum performance the producer and consumers should busy spin wh
 
 <img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
 
-**NOTE:** By _non-blocking_ we want to mean that the producer will _not_ have to block on a full ring and will just keep going, overwriting the oldest entries of the circular ring. The consumer always has to block on an empty ring.
+**NOTE:** By _non-blocking_ we want to mean that the producer will _not_ have to block on a full ring and will just keep going, overwriting the oldest entries in the circular ring. `That means that the method `nextToDispatch()` will never return null`. On the other hand, the consumer always has to block on an empty ring.
 
 Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
 ```Java
