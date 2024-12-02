@@ -44,7 +44,7 @@ Note that for maximum performance the producer and consumers should busy spin wh
 
 <img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
 
-**NOTE:** By _non-blocking_ we want to mean that the producer will _not_ have to block on a full ring and will just keep going, overwriting the oldest entries in the circular ring. `That means that the method `nextToDispatch()` will never return null`. On the other hand, the consumer always has to block on an empty ring.
+**NOTE:** By _non-blocking_ we want to mean that the producer will _not_ have to block on a full ring and will just keep going, overwriting the oldest entries in the circular ring. `That means that the method nextToDispatch() will never return null`. On the other hand, the consumer always has to block on an empty ring.
 
 Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
 ```Java
