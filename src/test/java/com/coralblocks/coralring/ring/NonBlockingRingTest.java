@@ -57,8 +57,8 @@ public class NonBlockingRingTest {
 					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 					for(int i = 0; i < batchToSend; i++) {
 						Message m;
-						while((m = ringProducer.nextToDispatch()) == null) { // <=========
-							// busy spin while blocking (default and fastest wait strategy)
+						if((m = ringProducer.nextToDispatch()) == null) { // <=========
+							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
 						m.value = idToSend++; // sending an unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -153,8 +153,8 @@ public class NonBlockingRingTest {
 					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 					for(int i = 0; i < batchToSend; i++) {
 						Message m;
-						while((m = ringProducer.nextToDispatch()) == null) { // <=========
-							// busy spin while blocking (default and fastest wait strategy)
+						if((m = ringProducer.nextToDispatch()) == null) { // <=========
+							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
 						m.value = idToSend++; // sending an unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -249,8 +249,8 @@ public class NonBlockingRingTest {
 					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 					for(int i = 0; i < batchToSend; i++) {
 						Message m;
-						while((m = ringProducer.nextToDispatch()) == null) { // <=========
-							// busy spin while blocking (default and fastest wait strategy)
+						if((m = ringProducer.nextToDispatch()) == null) { // <=========
+							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
 						m.value = idToSend++; // sending an unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -374,8 +374,8 @@ public class NonBlockingRingTest {
 					int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 					for(int i = 0; i < batchToSend; i++) {
 						Message m;
-						while((m = ringProducer.nextToDispatch()) == null) { // <=========
-							// busy spin while blocking (default and fastest wait strategy)
+						if((m = ringProducer.nextToDispatch()) == null) { // <=========
+							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
 						m.value = idToSend++; // sending an unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?

@@ -50,8 +50,8 @@ public class NonBlockingProducer {
 			for(int i = 0; i < batchToSend; i++) {
 				Message m;
 				while((m = ringProducer.nextToDispatch()) == null) { // <=========
-					// busy spin while blocking (default and fastest wait strategy)
-					busySpinCount++;
+					// NOTE: For a non-blocking ring it will never return null
+					busySpinCount++; // this must always be zero for a non-blocking ring
 				}
 				m.value = idToSend++; // sending an unique value so the messages sent are unique
 				m.last = m.value == messagesToSend; // is it the last message I'll be sending?

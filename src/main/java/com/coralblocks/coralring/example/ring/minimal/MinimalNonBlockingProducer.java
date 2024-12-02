@@ -32,10 +32,10 @@ public class MinimalNonBlockingProducer {
 			
 			MutableLong ml; // our data transfer mutable object
 			
-			while((ml = ringProducer.nextToDispatch()) == null); // busy spin
+			while((ml = ringProducer.nextToDispatch()) == null); // NOTE: For a non-blocking ring it will never return null
 			ml.set(i);
 			
-			while((ml = ringProducer.nextToDispatch()) == null); // busy spin
+			while((ml = ringProducer.nextToDispatch()) == null); // NOTE: For a non-blocking ring it will never return null
 			ml.set(i + 1);
 			
 			ringProducer.flush(); // don't forget to notify consumer
