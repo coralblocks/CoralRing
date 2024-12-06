@@ -38,8 +38,6 @@ You can also have a single producer broadcasting messages to multiple consumers 
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastProducer.java) for a basic example of using blocking broadcast ring producer
 - Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastConsumer.java) for a basic example of using blocking broadcast ring consumer
 
-Note that for maximum performance the producer and consumers should busy spin when blocking. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
-
 ## Non-Blocking Ring
 
 <img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
