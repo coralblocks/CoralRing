@@ -41,7 +41,7 @@ public class MathUtils {
 	 * @return true if it is a power of two
 	 */
 	public static boolean isPowerOfTwo(long l) {
-	    return (l & (l - 1)) == 0;
+	    return l > 0 && (l & (l - 1)) == 0;
 	}
 	
 	/**
