@@ -1,14 +1,12 @@
 # Contributing to CoralRing
 
-By choosing to contribute you certify that you agree with the [Contributor License Agreement (CLA)](https://github.com/coralblocks/CoralRing/blob/master/CLA.md) included in this repository. You can [read it here](https://github.com/coralblocks/CoralRing/blob/master/CLA.md).
+By choosing to contribute you certify that you agree with the [Contributor License Agreement (CLA)](CLA.md) included in this repository. You can [read it here](CLA.md).
 
 If you would like to contribute code you can do so through GitHub by sending a pull request or raising an issue with an attached patch.
 
 ## License
 
-By contributing your code, you agree to license your contribution under the terms of the Apache 2.0 License:
- 
-https://github.com/coralblocks/CoralRing/blob/master/LICENSE
+By contributing your code, you agree to license your contribution under the terms of the [Apache 2.0 License](LICENSE) included in this repository.
 
 All files must be made available under the Apache 2.0 License.
 
