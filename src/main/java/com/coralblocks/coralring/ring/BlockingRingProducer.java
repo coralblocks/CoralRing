@@ -17,15 +17,15 @@ package com.coralblocks.coralring.ring;
 
 import java.util.Iterator;
 
+import com.coralblocks.coralpool.ArrayObjectPool;
+import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.LinkedObjectList;
-import com.coralblocks.coralring.util.LinkedObjectPool;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemoryVolatileLong;
 import com.coralblocks.coralring.util.MemorySerializable;
-import com.coralblocks.coralring.util.ObjectPool;
+import com.coralblocks.coralring.util.MemoryVolatileLong;
 
 /**
  * <p>
@@ -95,7 +95,13 @@ public class BlockingRingProducer<E extends MemorySerializable> implements RingP
 		this.offerSequence = new MemoryVolatileLong(headerAddress + SEQ_PREFIX_PADDING, memory);
 		this.fetchSequence = new MemoryVolatileLong(headerAddress + CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		this.lastOfferedSeq = offerSequence.get();
-		this.dataPool = new LinkedObjectPool<E>(64, builder);
+		final com.coralblocks.coralpool.util.Builder<E> poolBuilder = new com.coralblocks.coralpool.util.Builder<E>() {
+			@Override
+			public E newInstance() {
+				return builder.newInstance();
+			}
+		};
+		this.dataPool = new ArrayObjectPool<E>(64, poolBuilder);
 		this.dataList = new LinkedObjectList<E>(64);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
