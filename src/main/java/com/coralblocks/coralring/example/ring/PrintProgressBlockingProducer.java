@@ -47,7 +47,7 @@ public class PrintProgressBlockingProducer {
 				while((m = ringProducer.nextToDispatch()) == null) { // <=========
 					// busy spin while blocking (default and fastest wait strategy)
 				}
-				m.value = idToSend++; // sending an unique value so the messages sent are unique
+				m.value = idToSend++; // sending a unique value so the messages sent are unique
 				if (first) {
 					first = false;
 				} else {

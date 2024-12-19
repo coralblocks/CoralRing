@@ -41,7 +41,7 @@ public class NonBlockingConsumer {
 		
 		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages,"
 								+ (checkChecksum ? "" : " not") + " checking checksum"
-								+ " and with fall behing tolerance " + fallBehindTolerance
+								+ " and with fall behind tolerance " + fallBehindTolerance
 								+ " (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
 								+ "...\n");
 		

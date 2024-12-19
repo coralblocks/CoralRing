@@ -33,7 +33,7 @@ public class BlockingBroadcastProducer {
 		
 		final RingProducer<Message> ringProducer = new BlockingBroadcastRingProducer<Message>(Message.getMaxSize(), Message.class, FILENAME, numberOfConsumers);
 		
-		int idToSend = 1; // each message from this producer will contain an unique value (id)
+		int idToSend = 1; // each message from this producer will contain a unique value (id)
 		long busySpinCount = 0;
 		
 		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages"
@@ -52,7 +52,7 @@ public class BlockingBroadcastProducer {
 					// busy spin while blocking (default and fastest wait strategy)
 					busySpinCount++;
 				}
-				m.value = idToSend++; // sending an unique value so the messages sent are unique
+				m.value = idToSend++; // sending a unique value so the messages sent are unique
 				m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 			}
 			ringProducer.flush(); // <=========

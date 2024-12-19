@@ -48,7 +48,7 @@ public class BlockingRingTest {
 				
 				final RingProducer<Message> ringProducer = new BlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
-				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				int idToSend = 1; // each message from this producer will contain a unique value (id)
 				
 				Random rand = new Random();
 				
@@ -60,7 +60,7 @@ public class BlockingRingTest {
 						while((m = ringProducer.nextToDispatch()) == null) { // <=========
 							// busy spin while blocking (default and fastest wait strategy)
 						}
-						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
 					ringProducer.flush(); // <=========

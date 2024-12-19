@@ -34,11 +34,11 @@ public class NonBlockingProducer {
 		
 		final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME, writeChecksum);
 		
-		int idToSend = 1; // each message from this producer will contain an unique value (id)
+		int idToSend = 1; // each message from this producer will contain a unique value (id)
 		long busySpinCount = 0;
 		
 		System.out.println("Producer will send " + messagesToSend + " messages in max batches of " + maxBatchSize + " messages,"
-							+ (writeChecksum ? "" : " not") + " writting checksum"
+							+ (writeChecksum ? "" : " not") + " writing checksum"
 							+ " and with sleepTime of " + sleepTime + " nanoseconds (lastOfferedSeq=" + ringProducer.getLastOfferedSequence() + ")"
 							+ "...\n");
 		
@@ -53,7 +53,7 @@ public class NonBlockingProducer {
 					// NOTE: For a non-blocking ring it will never return null
 					busySpinCount++; // this must always be zero for a non-blocking ring
 				}
-				m.value = idToSend++; // sending an unique value so the messages sent are unique
+				m.value = idToSend++; // sending a unique value so the messages sent are unique
 				m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 			}
 			ringProducer.flush(); // <=========
