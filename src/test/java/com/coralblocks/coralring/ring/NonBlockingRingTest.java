@@ -48,7 +48,7 @@ public class NonBlockingRingTest {
 				
 				final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
-				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				int idToSend = 1; // each message from this producer will contain a unique value (id)
 				
 				Random rand = new Random();
 				
@@ -60,7 +60,7 @@ public class NonBlockingRingTest {
 						if((m = ringProducer.nextToDispatch()) == null) { // <=========
 							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
-						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
 					ringProducer.flush(); // <=========
@@ -144,7 +144,7 @@ public class NonBlockingRingTest {
 				
 				final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
-				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				int idToSend = 1; // each message from this producer will contain a unique value (id)
 				
 				Random rand = new Random();
 				
@@ -156,7 +156,7 @@ public class NonBlockingRingTest {
 						if((m = ringProducer.nextToDispatch()) == null) { // <=========
 							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
-						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
 					ringProducer.flush(); // <=========
@@ -240,7 +240,7 @@ public class NonBlockingRingTest {
 				
 				final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
 				
-				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				int idToSend = 1; // each message from this producer will contain a unique value (id)
 				
 				Random rand = new Random();
 				
@@ -252,7 +252,7 @@ public class NonBlockingRingTest {
 						if((m = ringProducer.nextToDispatch()) == null) { // <=========
 							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
-						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
 					ringProducer.flush(); // <=========
@@ -365,7 +365,7 @@ public class NonBlockingRingTest {
 				
 				final RingProducer<Message> ringProducer = new NonBlockingRingProducer<Message>(Message.getMaxSize(), Message.class, filename, true);
 				
-				int idToSend = 1; // each message from this producer will contain an unique value (id)
+				int idToSend = 1; // each message from this producer will contain a unique value (id)
 				
 				Random rand = new Random();
 				
@@ -377,7 +377,7 @@ public class NonBlockingRingTest {
 						if((m = ringProducer.nextToDispatch()) == null) { // <=========
 							throw new IllegalStateException("Non-blocking ring producer can never get a null here!");
 						}
-						m.value = idToSend++; // sending an unique value so the messages sent are unique
+						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
 					}
 					ringProducer.flush(); // <=========

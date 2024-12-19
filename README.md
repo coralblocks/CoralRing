@@ -65,9 +65,9 @@ Unfortantely, although this will further reduce the chances for the consumer to 
 
 ### Using a _checksum_ for each message
 
-To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it. Although we use a _fast_ hash algorithm ([_xxHash_](https://github.com/apache/drill/blob/master/exec/java-exec/src/main/java/org/apache/drill/exec/expr/fn/impl/XXHash.java](https://xxhash.com/))) to calculate the checksum, there is a small performance penalty to pay when you choose this approach.
+To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it. Although we use a _fast_ hash algorithm ([_xxHash_](https://github.com/apache/drill/blob/master/exec/java-exec/src/main/java/org/apache/drill/exec/expr/fn/impl/XXHash.java) - https://xxhash.com/) to calculate the checksum, there is a small performance penalty to pay when you choose this approach.
 
-The constructor of `NonBlockingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `fetch()`:
+The constructor of `NonBlockingRingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingRingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `fetch()`:
 ```Java
 for(long i = 0; i < avail; i++) {
       

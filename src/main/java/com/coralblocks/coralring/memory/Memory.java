@@ -19,7 +19,7 @@ import java.nio.ByteBuffer;
 
 /**
  * An interface describing the behavior of a <i>piece of memory</i>. The memory space will have a size and will be allocated somewhere. It can then be
- * accessed and later released. It can support <i>volatile</i> operations for primitives. It also support bulk and fast operations on <code>ByteBuffer</code>s
+ * accessed and later released. It can support <i>volatile</i> operations for primitives. It also supports bulk and fast operations on <code>ByteBuffer</code>s
  * and <code>byte[]</code>s.
  */
 public interface Memory {

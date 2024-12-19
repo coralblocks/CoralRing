@@ -43,7 +43,7 @@ import com.coralblocks.coralring.util.MemoryVolatileLong;
  * memory operations.
  * </p>
  * <p>
- * We assume a CPU cache line of 64 bytes and we place the sequence number on the middle of cache line. The sequence number is a <code>long</code>
+ * We assume a CPU cache line of 64 bytes and we place the sequence number in the middle of cache line. The sequence number is a <code>long</code>
  * with 8 bytes. So the memory layout for the header is: <code>24 bytes (padding) + 8 bytes (sequence) + 32 bytes (padding)</code>, for a total of 64 bytes.
  * </p>
  * 

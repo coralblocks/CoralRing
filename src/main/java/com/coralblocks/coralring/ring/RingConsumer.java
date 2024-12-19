@@ -21,7 +21,7 @@ import com.coralblocks.coralring.util.MemorySerializable;
 
 /**
  * An interface describing the behavior of a ring consumer using {@link Memory} to read data (i.e. messages) from the other side.
- * Each message is associated with an unique sequence number.
+ * Each message is associated with a unique sequence number.
  * 
  * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
@@ -85,7 +85,7 @@ public interface RingConsumer<E extends MemorySerializable> {
 	public E fetch(boolean remove);
 	
 	/**
-	 * Fetch the next available message. This message simply calls {@link fetch(boolean)} with <code>true</code>.
+	 * Fetch the next available message. This message simply calls {@link #fetch(boolean)} with <code>true</code>.
 	 * 
 	 * @return the next available message
 	 */

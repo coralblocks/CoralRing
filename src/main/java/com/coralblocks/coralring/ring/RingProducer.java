@@ -21,7 +21,7 @@ import com.coralblocks.coralring.util.MemorySerializable;
 
 /**
  * An interface describing the behavior of a ring producer using {@link Memory} to send data (i.e. messages) to the other side.
- * Each message is associated with an unique sequence number.
+ * Each message is associated with a unique sequence number.
  * 
  * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
