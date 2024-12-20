@@ -10,6 +10,12 @@ For maximum performance (lowest possible latency) you should place your memory-m
 
 For some performance numbers you can check [this link](https://www.coralblocks.com/index.php/inter-process-communication-with-coralqueue/).
 
+<pre>
+<b>Note:</b> CoralRing allows the exchange of messages <i>inside the same machine</i>.
+For a message middleware solution to build distributed systems across multiple
+machines using the sequencer architecture you should refer to <a href="https://www.coralblocks.com/index.php/state-of-the-art-distributed-systems-with-coralmq/">this article</a>.
+</pre>
+
 ## Blocking Ring
 
 <img src="images/BlockingRing.png" alt="BlockingRing" width="50%" height="50%" />
