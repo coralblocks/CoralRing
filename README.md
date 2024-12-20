@@ -13,7 +13,7 @@ For some performance numbers you can check [this link](https://www.coralblocks.c
 <pre>
 <b>Note:</b> CoralRing allows the exchange of messages <i>inside the same machine</i>.
 For a multicast message middleware solution to build distributed systems across multiple
-machines using the sequencer architecture you should refer to <a href="https://www.coralblocks.com/index.php/state-of-the-art-distributed-systems-with-coralmq/">this article</a>.
+machines using the <i>sequencer architecture</i> you should refer to <a href="https://www.coralblocks.com/index.php/state-of-the-art-distributed-systems-with-coralmq/">this article</a>.
 </pre>
 
 ## Blocking Ring
