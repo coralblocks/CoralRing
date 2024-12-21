@@ -129,7 +129,7 @@ public class LinkedObjectList<E> implements Iterable<E> {
 	/**
 	 * Returns the element on the head of the list.
 	 * 
-	 * @return the first element in the list
+	 * @return the first element in the list or null if the list is empty
 	 */
 	public E first() {
 		if (head == null) return null;
@@ -139,7 +139,7 @@ public class LinkedObjectList<E> implements Iterable<E> {
 	/**
 	 * Removes the element from the head of the list.
 	 * 
-	 * @return the first element from the list that was removed
+	 * @return the first element from the list that was removed or null if the list is empty
 	 */
 	public E removeFirst() {
 		if (head == null) return null;
@@ -156,7 +156,7 @@ public class LinkedObjectList<E> implements Iterable<E> {
 	/**
 	 * Returns the element on the tail of the list.
 	 * 
-	 * @return the last element in the list
+	 * @return the last element in the list or null if the list is empty
 	 */
 	public E last() {
 		if (tail == null) return null;
@@ -166,7 +166,7 @@ public class LinkedObjectList<E> implements Iterable<E> {
 	/**
 	 * Removes the element from the tail of the list.
 	 * 
-	 * @return the last element from the list that was removed
+	 * @return the last element from the list that was removed or null if the list is empty
 	 */
 	public E removeLast() {
 		if (tail == null) return null;
