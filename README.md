@@ -16,41 +16,37 @@ For a multicast message middleware solution to build distributed systems across 
 machines using the <i>sequencer architecture</i> you should refer to <a href="https://www.coralblocks.com/index.php/state-of-the-art-distributed-systems-with-coralmq/">this article</a>.
 </pre>
 
-## Blocking Ring
+## Waiting Ring
 
-<img src="images/BlockingRing.png" alt="BlockingRing" width="50%" height="50%" />
+<img src="images/WaitingRing.png" alt="WaitingRing" width="50%" height="50%" />
 
-**NOTE:** By _blocking_ we want to mean that the producer will have to block on a full ring by waiting around `nextToDispatch()` until it returns an object. On the other hand, the consumer always has to block on an empty ring.
+Because the ring is a _bounded_ circular queue, the first approach is to have a _waiting_ producer and consumer. In other words, the ring producer will wait when the ring is full and the ring consumer will wait when the ring is empty. Basically a slow consumer will cause the producer to wait for space to become available in the ring. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
 
-Because the ring is a _bounded_ circular queue, the first approach is to have a _blocking_ producer and consumer. In other words, the ring producer will block (_wait_) when the ring is full and the ring consumer will block (_wait_) when the ring is empty. Basically a slow consumer will cause the producer to block, waiting for space to become available in the ring. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
-
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingProducer.java) for a minimal example of using blocking ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingConsumer.java) for a minimal example of using blocking ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingProducer.java) for a minimal example of using a waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingConsumer.java) for a minimal example of using a waiting ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingProducer.java) for a basic example of using blocking ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingConsumer.java) for a basic example of using blocking ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingProducer.java) for a basic example of using a waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingConsumer.java) for a basic example of using a waiting ring consumer
 
-Note that for maximum performance the producer and consumer should busy spin when blocking. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
+Note that for maximum performance the producer and consumer should busy spin when waiting, polling the ring. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
 
-## Blocking Broadcast Ring
+## Waiting Broadcast Ring
 
-<img src="images/BlockingMcastRing.png" alt="BlockingMcastRing" width="50%" height="50%" />
+<img src="images/WaitingBroadcastRing.png" alt="WaitingBroadcastRing" width="50%" height="50%" />
 
-You can also have a single producer broadcasting messages to multiple consumers so that `each consumer gets all the messages in the same order that they were sent by the producer`. Any slow consumer can cause the ring to get full and the producer to block. As the slow consumer makes progress so will the producer.
+You can also have a single producer broadcasting messages to multiple consumers so that `each consumer gets all the messages in the same order that they were sent by the producer`. Any slow consumer can cause the ring to get full and the producer to wait. As the slow consumer makes progress so will the producer.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingBroadcastProducer.java) for a minimal example of using blocking broadcast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalBlockingBroadcastConsumer.java) for a minimal example of using blocking broadcast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastProducer.java) for a minimal example of using a waiting broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastConsumer.java) for a minimal example of using a waiting broadcast ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastProducer.java) for a basic example of using blocking broadcast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BlockingBroadcastConsumer.java) for a basic example of using blocking broadcast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingBroadcastProducer.java) for a basic example of using a waiting broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingBroadcastConsumer.java) for a basic example of using a waiting broadcast ring consumer
 
-## Non-Blocking Ring
+## Non-Waiting Ring
 
-<img src="images/NonBlockingRing.png" alt="NonBlockingRing" width="50%" height="50%" />
+<img src="images/NonWaitingRing.png" alt="NonWaitingRing" width="50%" height="50%" />
 
-**NOTE:** By _non-blocking_ we want to mean that the producer will _not_ have to block on a full ring and will just keep going, overwriting the oldest entries in the circular ring. `That means that the method nextToDispatch() will never return null`. On the other hand, the consumer always has to block on an empty ring.
-
-Things get more interesting when we allow the ring producer to write as fast as possible without ever blocking on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to block_. It has to disconnect because it must never skip messages from the producer.
+Things get more interesting when we allow the ring producer to write as fast as possible without ever waiting on a full ring. Because the ring is a _circular_ queue, the producer can just keep writing forever, overwriting the oldest messages on the head of the queue with the newest ones. In this new scenario, a _lagging consumer_ that falls behind and loses messages will simply disconnect (give up) _instead of causing the producer to wait_. It has to disconnect because it must never skip messages from the producer.
 ```Java
 long avail = ringConsumer.availableToFetch();
 			
@@ -59,13 +55,13 @@ if (avail == 0) continue; // busy spin as the ring is empty
 if (avail == -1) throw new RuntimeException("The consumer fell behind too much! (ring wrapped)");
 ```
 
-This lagging consumer problem can be mitigated by creating a large memory-mapped file so that your shared memory ring is big enough to give room for the consumer to fall behind and catch up. However there is a more important issue that we need to address with a non-blocking ring which is when the consumer falls behind so much that it hits the _edge_ of the circular ring. When that happens there is a _small chance_ that the consumer will be reading the oldest message in the ring at the same time that the producer is overwriting it with the newest message. In other words, the consumer can _trip over_ the producer.
+This lagging consumer problem can be mitigated by creating a large memory-mapped file so that your shared memory ring is big enough to give room for the consumer to fall behind and catch up. However there is a more important issue that we need to address with a non-waiting ring which is when the consumer falls behind so much that it hits the _edge_ of the circular ring. When that happens there is a _small chance_ that the consumer will be reading the oldest message in the ring at the same time that the producer is overwriting it with the newest message. In other words, the consumer can _trip over_ the producer.
 
 ### Using a _fall behind tolerance_
 
 The _tripping over_ problem will _only_ happen when the consumer falls behind N messages, where N is equal to the capacity of the ring. If it falls behind a little more, it simply disconnects. If it falls behind a little less it _should_ still be able to read the next message without any issues. `So the bigger the capacity of the ring the less likely it is for the consumer to trip over the producer` because the more room it has to fall behind safely. Therefore, to reduce the chances for the consumer to get close to the edge, we can introduce a _fall behind tolerance_, in other words, `we can make the consumer give up and disconnect early when it falls to a percentage P of the capacity of the ring`.
 
-The constructor of `NonBlockingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls below that threshold then its `availableToFetch()` method returns `-1`.
+The constructor of `NonWaitingConsumer` can take a _float_ argument `fallBehindTolerance` to specify the percentage of the ring capacity to fall behind before disconnecting. When it falls below that threshold then its `availableToFetch()` method returns `-1`.
 
 Unfortantely, although this will further reduce the chances for the consumer to read a corrupt message, **it does not make it zero**. Theoretically, the slowness of the consumer is so _unpredictable_ that while it is reading a message there will always be a small chance that the producer is overwriting it. If we really want to eliminate this possibility completely we must use a _checksum_ for each message.
 
@@ -73,7 +69,7 @@ Unfortantely, although this will further reduce the chances for the consumer to 
 
 To completely solve the _corrupt message_ consumer problem, we can make the producer write a _checksum_ together with each message so that the consumer can check the integrity of the message after it reads it. Although we use a _fast_ hash algorithm ([_xxHash_](https://github.com/apache/drill/blob/master/exec/java-exec/src/main/java/org/apache/drill/exec/expr/fn/impl/XXHash.java) - https://xxhash.com/) to calculate the checksum, there is a small performance penalty to pay when you choose this approach.
 
-The constructor of `NonBlockingRingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonBlockingRingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `fetch()`:
+The constructor of `NonWaitingRingProducer` can take a _boolean_ argument `writeChecksum` to tell the producer to write the _checksum_. The constructor of `NonWaitingRingConsumer` can take a _boolean_ argument `checkChecksum` to tell the consumer to check the _checksum_. The consumer can check for a _checksum error_ by checking for a `null` value returned from `fetch()`:
 ```Java
 for(long i = 0; i < avail; i++) {
       
@@ -93,17 +89,17 @@ Note that when using the _checksum_ approach there is no reason to also use a _f
 
 There is also another _simple_ approach to solve the _tripping over_ problem: `just allocate a very large memory-mapped file so that the producer never has to wrap around the ring`. For example, let's say you want to send _100 million_ messages per day, with a maximum size of _1024 bytes_. If you do the math you will see that this is _only_ 95 gigabytes of hard drive space. And as a bonus, as long as you don't go above your predicted maximum number of messages (no wrapping around the ring), you will also have all your messages persisted to disk at the end of your daily session. Then to begin a new session you can move the session file someplace else for archiving, reset the message sequence back to 1, and start over again.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonBlockingProducer.java) for a minimal example of using non-blocking ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonBlockingConsumer.java) for a minimal example of using non-blocking ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingProducer.java) for a minimal example of using a non-waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingConsumer.java) for a minimal example of using a non-waiting ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonBlockingProducer.java) for a basic example of using non-blocking ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonBlockingConsumer.java) for a basic example of using non-blocking ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonWaitingProducer.java) for a basic example of using a non-waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonWaitingConsumer.java) for a basic example of using a non-waiting ring consumer
 
-## Non-Blocking Multicast Ring
+## Non-Waiting Multicast Ring
 
-A non-blocking ring can be used naturally to implement _multicast consumers_. That means that `you can have multiple non-blocking ring consumers reading from the same non-blocking ring producer`. All consumers will read all messages in the exact same order. A consumer can still fall behind and disconnect, but it will never miss a message or process a message out of order. It will also never block the producer which does not even know how many consumers it is multicasting to. In other words, `consumers can leave and join the ring at any moment` without impacting the producer.
+A non-waiting ring can be used naturally to implement _multicast consumers_. That means that `you can have multiple non-waiting ring consumers reading from the same non-waiting ring producer`. All consumers will read all messages in the exact same order. A consumer can still fall behind and disconnect, but it will never miss a message or process a message out of order. It will also never make the producer wait as the producer does not even know how many consumers it is multicasting to. In other words, `consumers can leave and join the ring at any moment` without impacting the producer.
 
-<img src="images/NonBlockingMcastRing.png" alt="NonBlockingMcastRing" width="50%" height="50%" />
+<img src="images/NonWaitingMulticastRing.png" alt="NonWaitingMulticastRing" width="50%" height="50%" />
 
 ## CoralQueue
 
