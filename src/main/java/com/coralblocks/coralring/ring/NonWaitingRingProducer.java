@@ -23,9 +23,9 @@ import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
+import com.coralblocks.coralring.util.ArrayLinkedObjectList;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.FastHash;
-import com.coralblocks.coralring.util.LinkedObjectList;
 import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.MemoryVolatileLong;
@@ -82,7 +82,7 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
-	private final LinkedObjectList<E> dataList;
+	private final ArrayLinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 	private final boolean writeChecksum;
 	private final ByteBufferMemory bbMemory;
@@ -114,8 +114,8 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 				return builder.newInstance();
 			}
 		};
-		this.dataPool = new ArrayObjectPool<E>(64, poolBuilder);
-		this.dataList = new LinkedObjectList<E>(64);
+		this.dataPool = new ArrayObjectPool<E>(256, poolBuilder);
+		this.dataList = new ArrayLinkedObjectList<E>(256);
 		this.writeChecksum = writeChecksum;
 		if (writeChecksum) {
 			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
@@ -274,7 +274,7 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 			seq++;
 		}
 		
-		dataList.clear();
+		dataList.clear(false); // no need to nullify because elements are in the pool anyway
 		
 		offerSequence.set(lastOfferedSeq);
 	}

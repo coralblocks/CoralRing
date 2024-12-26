@@ -21,8 +21,8 @@ import com.coralblocks.coralpool.ArrayObjectPool;
 import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
+import com.coralblocks.coralring.util.ArrayLinkedObjectList;
 import com.coralblocks.coralring.util.Builder;
-import com.coralblocks.coralring.util.LinkedObjectList;
 import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.MemoryVolatileLong;
@@ -69,7 +69,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
-	private final LinkedObjectList<E> dataList;
+	private final ArrayLinkedObjectList<E> dataList;
 	private final boolean isPowerOfTwo;
 
 	/**
@@ -104,8 +104,8 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 				return builder.newInstance();
 			}
 		};
-		this.dataPool = new ArrayObjectPool<E>(64, poolBuilder);
-		this.dataList = new LinkedObjectList<E>(64);
+		this.dataPool = new ArrayObjectPool<E>(256, poolBuilder);
+		this.dataList = new ArrayLinkedObjectList<E>(256);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
 	
@@ -246,7 +246,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 			seq++;
 		}
 		
-		dataList.clear();
+		dataList.clear(false); // no need to nullify because elements are in the pool anyway
 		
 		offerSequence.set(lastOfferedSeq);
 	}
