@@ -164,7 +164,7 @@ public class ArrayLinkedObjectListTest {
     @Test
     public void testClear() {
         // Clear an empty list
-        list.clear();
+        list.clear(false);
         assertEquals(0, list.size());
 
         // Fill array portion
@@ -176,7 +176,7 @@ public class ArrayLinkedObjectListTest {
         list.addLast("E");
 
         assertEquals(5, list.size());
-        list.clear();
+        list.clear(true);
         assertEquals("Size should be 0 after clear", 0, list.size());
 
         // Ensure subsequent additions work fine after clear

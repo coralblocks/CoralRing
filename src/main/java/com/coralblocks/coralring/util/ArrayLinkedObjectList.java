@@ -100,13 +100,16 @@ public class ArrayLinkedObjectList<E> implements Iterable<E> {
 	
     /**
      * Removes all elements from this list. If the list size exceeds the array
-     * capacity, the overflow elements are cleared from the linked list. Any elements
-     * in the array portion are set to null.
+     * capacity, the overflow elements are cleared from the linked list.
+     * 
+     * @param nullifyArray true if you want to set the added array elements to null
      */
-	public final void clear() {
+	public final void clear(boolean nullifyArray) {
 		if (count > array.length) linkedList.clear();
-		int max = Math.min(array.length, count);
-		for(int i = 0; i < max; i++) array[i] = null;
+		if (nullifyArray) {
+			int max = Math.min(array.length, count);
+			for(int i = 0; i < max; i++) array[i] = null;
+		}
 		count = 0;
 	}
 	
