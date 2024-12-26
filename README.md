@@ -22,11 +22,11 @@ machines using the <i>sequencer architecture</i> you should refer to <a href="ht
 
 Because the ring is a _bounded_ circular queue, the first approach is to have a _waiting_ producer and consumer. In other words, the ring producer will wait when the ring is full and the ring consumer will wait when the ring is empty. Basically a slow consumer will cause the producer to wait for space to become available in the ring. The consumer reads the messages (all the messages) in the same order that they were sent by the producer.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingProducer.java) for a minimal example of using a waiting ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingConsumer.java) for a minimal example of using a waiting ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingRingProducer.java) for a minimal example of using a waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingRingConsumer.java) for a minimal example of using a waiting ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingProducer.java) for a basic example of using a waiting ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingConsumer.java) for a basic example of using a waiting ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicWaitingRingProducer.java) for a basic example of using a waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicWaitingRingConsumer.java) for a basic example of using a waiting ring consumer
 
 Note that for maximum performance the producer and consumer should busy spin when waiting, polling the ring. However you can also choose to use a _wait strategy_ from [CoralQueue](https://github.com/coralblocks/CoralQueue).
 
@@ -36,11 +36,11 @@ Note that for maximum performance the producer and consumer should busy spin whe
 
 You can also have a single producer broadcasting messages to multiple consumers so that `each consumer gets all the messages in the same order that they were sent by the producer`. Any slow consumer can cause the ring to get full and the producer to wait. As the slow consumer makes progress so will the producer.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastProducer.java) for a minimal example of using a waiting broadcast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastConsumer.java) for a minimal example of using a waiting broadcast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastRingProducer.java) for a minimal example of using a waiting broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalWaitingBroadcastRingConsumer.java) for a minimal example of using a waiting broadcast ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingBroadcastProducer.java) for a basic example of using a waiting broadcast ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/WaitingBroadcastConsumer.java) for a basic example of using a waiting broadcast ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicWaitingBroadcastRingProducer.java) for a basic example of using a waiting broadcast ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicWaitingBroadcastRingConsumer.java) for a basic example of using a waiting broadcast ring consumer
 
 ## Non-Waiting Ring
 
@@ -89,11 +89,11 @@ Note that when using the _checksum_ approach there is no reason to also use a _f
 
 There is also another _simple_ approach to solve the _tripping over_ problem: `just allocate a very large memory-mapped file so that the producer never has to wrap around the ring`. For example, let's say you want to send _100 million_ messages per day, with a maximum size of _1024 bytes_. If you do the math you will see that this is _only_ 95 gigabytes of hard drive space. And as a bonus, as long as you don't go above your predicted maximum number of messages (no wrapping around the ring), you will also have all your messages persisted to disk at the end of your daily session. Then to begin a new session you can move the session file someplace else for archiving, reset the message sequence back to 1, and start over again.
 
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingProducer.java) for a minimal example of using a non-waiting ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingConsumer.java) for a minimal example of using a non-waiting ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingRingProducer.java) for a minimal example of using a non-waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/minimal/MinimalNonWaitingRingConsumer.java) for a minimal example of using a non-waiting ring consumer
 <br/><br/>
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonWaitingProducer.java) for a basic example of using a non-waiting ring producer
-- Click [here](src/main/java/com/coralblocks/coralring/example/ring/NonWaitingConsumer.java) for a basic example of using a non-waiting ring consumer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicNonWaitingRingProducer.java) for a basic example of using a non-waiting ring producer
+- Click [here](src/main/java/com/coralblocks/coralring/example/ring/BasicNonWaitingRingConsumer.java) for a basic example of using a non-waiting ring consumer
 
 ## Non-Waiting Multicast Ring
 

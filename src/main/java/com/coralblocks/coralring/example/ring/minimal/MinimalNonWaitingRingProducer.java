@@ -18,7 +18,7 @@ package com.coralblocks.coralring.example.ring.minimal;
 import com.coralblocks.coralring.ring.NonWaitingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
-public class MinimalNonWaitingProducer {
+public class MinimalNonWaitingRingProducer {
 	
 	static final String FILENAME = "minimal-waiting.mmap";
 	

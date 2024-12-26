@@ -20,7 +20,7 @@ import java.util.Random;
 import com.coralblocks.coralring.ring.WaitingBroadcastRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
-public class WaitingBroadcastProducer {
+public class BasicWaitingBroadcastRingProducer {
 	
 	static final String FILENAME = "shared-ring.mmap";
 	

@@ -18,49 +18,33 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coralblocks.coralring.ring.NonWaitingRingConsumer;
+import com.coralblocks.coralring.ring.WaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class NonWaitingConsumer {
+public class BasicWaitingRingConsumer {
 	
-	static final String FILENAME = NonWaitingProducer.FILENAME;
-	static final int RING_CAPACITY = NonWaitingProducer.RING_CAPACITY;
+	static final String FILENAME = BasicWaitingRingProducer.FILENAME;
 	
 	public static void main(String[] args) {
 		
 		final int expectedMessagesToReceive = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
-		final boolean checkChecksum = args.length > 1 ? Boolean.parseBoolean(args[1]) : false;
-		final float fallBehindTolerance = args.length > 2 ? Float.parseFloat(args[2]) : 1.0f;
-		final long sleepTime = args.length > 3 ? Long.parseLong(args[3]) : -1;
-		final boolean deleteFile = args.length > 4 ? Boolean.parseBoolean(args[4]) : true;
+		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
-		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(RING_CAPACITY, Message.getMaxSize(), Message.class, FILENAME, checkChecksum, fallBehindTolerance);
+		final RingConsumer<Message> ringConsumer = new WaitingRingConsumer<Message>(Message.getMaxSize(), Message.class, FILENAME);
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
 		
-		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages,"
-								+ (checkChecksum ? "" : " not") + " checking checksum"
-								+ " and with fall behind tolerance " + fallBehindTolerance
-								+ " (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
+		System.out.println("Consumer expects to receive " + expectedMessagesToReceive + " messages"
+								+ " with sleepTime of " + sleepTime + " nanoseconds (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
 								+ "...\n");
 		
 		boolean isRunning = true;
-		OUTER: while(isRunning) {
+		while(isRunning) {
 			long avail = ringConsumer.availableToFetch(); // <=========
-			if (avail == -1) {
-				// fell behind (bye bye!)
-				System.out.println("=====> Consumer fell behind! (ring wrapped)");
-				break;
-			}
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
 					Message m = ringConsumer.fetch(); // <=========
-					if (m == null) {
-						// consumer tripped over producer
-						System.out.println("=====> Consumer tripped over producer! (checksum failed)");
-						break OUTER;
-					}
 					messagesReceived.add(m.value); // save just the long value from this message
 					if (m.last) isRunning = false; // I'm done!
 				}
@@ -75,7 +59,7 @@ public class NonWaitingConsumer {
 		
 		System.out.println("Consumer DONE!");
 		
-		ringConsumer.close(isRunning == false && deleteFile); // delete file
+		ringConsumer.close(true); // delete file
 		
 		// Did we receive all messages?
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);

@@ -18,7 +18,7 @@ package com.coralblocks.coralring.example.ring.minimal;
 import com.coralblocks.coralring.ring.WaitingBroadcastRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
-public class MinimalWaitingBroadcastProducer {
+public class MinimalWaitingBroadcastRingProducer {
 	
 	static final String FILENAME = "minimal-waiting-bcast.mmap";
 	static final int NUMBER_OF_CONSUMERS = 2;

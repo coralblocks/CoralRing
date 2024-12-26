@@ -15,18 +15,18 @@
  */
 package com.coralblocks.coralring.example.ring.minimal;
 
-import com.coralblocks.coralring.ring.WaitingRingConsumer;
+import com.coralblocks.coralring.ring.NonWaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class MinimalWaitingConsumer {
+public class MinimalNonWaitingRingConsumer {
 	
-	private static final String FILENAME = MinimalWaitingProducer.FILENAME;
+	private static final String FILENAME = MinimalWaitingRingProducer.FILENAME;
 	
 	public static void main(String[] args) {
 		
 		final int messagesToSend = 10;
 		
-		final RingConsumer<MutableLong> ringConsumer = new WaitingRingConsumer<MutableLong>(MutableLong.getMaxSize(), MutableLong.class, FILENAME); // default size is 1024
+		final RingConsumer<MutableLong> ringConsumer = new NonWaitingRingConsumer<MutableLong>(MutableLong.getMaxSize(), MutableLong.class, FILENAME); // default size is 1024
 		
 		boolean isRunning = true;
 		
@@ -36,9 +36,13 @@ public class MinimalWaitingConsumer {
 			
 			if (avail == 0) continue; // busy spin
 			
+			if (avail == -1) throw new RuntimeException("The consumer fell behind! (ring wrapped)");
+			
 			for(long i = 0; i < avail; i++) {
 				
 				MutableLong ml = ringConsumer.fetch();
+				
+				if (ml == null) throw new RuntimeException("The consumer tripped over the producer! (checksum failed)");
 				
 				System.out.print(ml.get());
 				

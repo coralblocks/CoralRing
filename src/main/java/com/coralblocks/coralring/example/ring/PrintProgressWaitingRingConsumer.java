@@ -18,7 +18,7 @@ package com.coralblocks.coralring.example.ring;
 import com.coralblocks.coralring.ring.WaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class PrintProgressWaitingConsumer {
+public class PrintProgressWaitingRingConsumer {
 	
 	public static void main(String[] args) {
 		

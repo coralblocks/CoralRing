@@ -20,7 +20,7 @@ import java.util.Random;
 import com.coralblocks.coralring.ring.WaitingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
-public class PrintProgressWaitingProducer {
+public class PrintProgressWaitingRingProducer {
 	
 	public static void main(String[] args) {
 		

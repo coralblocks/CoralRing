@@ -21,9 +21,9 @@ import java.util.List;
 import com.coralblocks.coralring.ring.WaitingBroadcastRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class WaitingBroadcastConsumer {
+public class BasicWaitingBroadcastRingConsumer {
 	
-	static final String FILENAME = WaitingProducer.FILENAME;
+	static final String FILENAME = BasicWaitingRingProducer.FILENAME;
 	
 	public static void main(String[] args) {
 		

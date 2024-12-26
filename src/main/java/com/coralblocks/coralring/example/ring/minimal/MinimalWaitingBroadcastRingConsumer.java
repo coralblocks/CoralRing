@@ -18,10 +18,10 @@ package com.coralblocks.coralring.example.ring.minimal;
 import com.coralblocks.coralring.ring.WaitingBroadcastRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
-public class MinimalWaitingBroadcastConsumer {
+public class MinimalWaitingBroadcastRingConsumer {
 	
-	private static final String FILENAME = MinimalWaitingBroadcastProducer.FILENAME;
-	private static final int NUMBER_OF_CONSUMERS = MinimalWaitingBroadcastProducer.NUMBER_OF_CONSUMERS;
+	private static final String FILENAME = MinimalWaitingBroadcastRingProducer.FILENAME;
+	private static final int NUMBER_OF_CONSUMERS = MinimalWaitingBroadcastRingProducer.NUMBER_OF_CONSUMERS;
 	
 	public static void main(String[] args) {
 		
