@@ -26,7 +26,9 @@ public class MinimalNonWaitingRingConsumer {
 		
 		final int messagesToSend = 10;
 		
-		final RingConsumer<MutableLong> ringConsumer = new NonWaitingRingConsumer<MutableLong>(MutableLong.getMaxSize(), MutableLong.class, FILENAME); // default size is 1024
+		final RingConsumer<MutableLong> ringConsumer = new NonWaitingRingConsumer<>(MutableLong.getMaxSize(), 
+																					MutableLong.class, 
+																					FILENAME); // default size is 1024
 		
 		boolean isRunning = true;
 		

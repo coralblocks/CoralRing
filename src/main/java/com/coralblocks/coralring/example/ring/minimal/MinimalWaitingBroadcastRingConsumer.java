@@ -28,8 +28,11 @@ public class MinimalWaitingBroadcastRingConsumer {
 		final int messagesToSend = 10;
 		final int consumerIndex = Integer.parseInt(args[0]); // you must specify the index of the consumer
 		
-		final RingConsumer<MutableLong> ringConsumer = new WaitingBroadcastRingConsumer<MutableLong>(8, MutableLong.getMaxSize(), 
-										MutableLong.class, FILENAME, consumerIndex, NUMBER_OF_CONSUMERS); // default size is 1024
+		final RingConsumer<MutableLong> ringConsumer = new WaitingBroadcastRingConsumer<>(MutableLong.getMaxSize(),
+																						  MutableLong.class, 
+																						  FILENAME, 
+																						  consumerIndex, 
+																						  NUMBER_OF_CONSUMERS); // default size is 1024
 		
 		boolean isRunning = true;
 		

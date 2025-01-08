@@ -27,8 +27,10 @@ public class MinimalWaitingBroadcastRingProducer {
 		
 		final int messagesToSend = 10;
 		
-		final RingProducer<MutableLong> ringProducer = new WaitingBroadcastRingProducer<MutableLong>(8, MutableLong.getMaxSize(), 
-										MutableLong.class, FILENAME, NUMBER_OF_CONSUMERS); // default size is 1024
+		final RingProducer<MutableLong> ringProducer = new WaitingBroadcastRingProducer<>(MutableLong.getMaxSize(), 
+																						  MutableLong.class, 
+																						  FILENAME, 
+																						  NUMBER_OF_CONSUMERS); // default size is 1024
 		
 		for(int i = 0; i < messagesToSend; i += 2) { // note we are looping 2 by 2 (we are sending a batch of 2 messages)
 			
