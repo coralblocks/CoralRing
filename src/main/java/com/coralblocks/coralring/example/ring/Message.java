@@ -16,7 +16,7 @@
 package com.coralblocks.coralring.example.ring;
 
 import com.coralblocks.coralring.memory.Memory;
-import com.coralblocks.coralring.util.MemorySerializable;
+import com.coralblocks.coralring.memory.MemorySerializable;
 
 public class Message implements MemorySerializable {
 	

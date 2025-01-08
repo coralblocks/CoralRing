@@ -13,9 +13,7 @@
  * either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package com.coralblocks.coralring.util;
-
-import com.coralblocks.coralring.memory.Memory;
+package com.coralblocks.coralring.memory;
 
 /**
  * An interface that describes how an object can be serialized to and from memory so that it can be

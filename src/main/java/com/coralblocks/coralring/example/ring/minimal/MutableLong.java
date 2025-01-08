@@ -16,7 +16,7 @@
 package com.coralblocks.coralring.example.ring.minimal;
 
 import com.coralblocks.coralring.memory.Memory;
-import com.coralblocks.coralring.util.MemorySerializable;
+import com.coralblocks.coralring.memory.MemorySerializable;
 
 /**
  * A mutable long class to encapsulate a long value.

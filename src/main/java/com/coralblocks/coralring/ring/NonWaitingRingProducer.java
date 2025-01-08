@@ -22,12 +22,12 @@ import com.coralblocks.coralpool.ArrayObjectPool;
 import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
+import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.ArrayLinkedObjectList;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.MathUtils;
-import com.coralblocks.coralring.util.MemorySerializable;
 import com.coralblocks.coralring.util.MemoryVolatileLong;
 
 /**

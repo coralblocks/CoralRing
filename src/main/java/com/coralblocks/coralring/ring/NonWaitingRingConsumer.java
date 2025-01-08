@@ -20,12 +20,12 @@ import java.nio.ByteBuffer;
 
 import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
+import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.memory.SharedMemory;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.FastHash;
 import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.MemoryVolatileLong;
-import com.coralblocks.coralring.util.MemorySerializable;
 
 /**
  * <p>

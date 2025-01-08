@@ -18,6 +18,7 @@ package com.coralblocks.coralring.util;
 import java.nio.ByteBuffer;
 
 import com.coralblocks.coralring.memory.Memory;
+import com.coralblocks.coralring.memory.MemorySerializable;
 
 /**
  * <p>A special {@link MemorySerializable} object that allows you to send anything through CoralRing as a ByteBuffer.

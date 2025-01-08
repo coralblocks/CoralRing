@@ -16,8 +16,8 @@
 package com.coralblocks.coralring.ring;
 
 import com.coralblocks.coralring.memory.Memory;
+import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.util.Builder;
-import com.coralblocks.coralring.util.MemorySerializable;
 
 /**
  * An interface describing the behavior of a ring consumer using {@link Memory} to read data (i.e. messages) from the other side.
