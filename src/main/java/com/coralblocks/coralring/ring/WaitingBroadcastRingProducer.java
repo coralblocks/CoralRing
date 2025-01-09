@@ -18,6 +18,7 @@ package com.coralblocks.coralring.ring;
 import java.util.Iterator;
 
 import com.coralblocks.coralpool.ArrayObjectPool;
+import com.coralblocks.coralpool.ObjectBuilder;
 import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
@@ -98,7 +99,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 			this.fetchSequence[i] = new MemoryVolatileLong(headerAddress + (i + 1) * CPU_CACHE_LINE + SEQ_PREFIX_PADDING, memory);
 		}
 		this.lastOfferedSeq = offerSequence.get();
-		final com.coralblocks.coralpool.util.Builder<E> poolBuilder = new com.coralblocks.coralpool.util.Builder<E>() {
+		final ObjectBuilder<E> poolBuilder = new ObjectBuilder<E>() {
 			@Override
 			public E newInstance() {
 				return builder.newInstance();
