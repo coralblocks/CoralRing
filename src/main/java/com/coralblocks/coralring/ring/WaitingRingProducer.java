@@ -17,13 +17,13 @@ package com.coralblocks.coralring.ring;
 
 import java.util.Iterator;
 
+import com.coralblocks.coralds.list.ArrayLinkedList;
 import com.coralblocks.coralpool.ArrayObjectPool;
 import com.coralblocks.coralpool.ObjectBuilder;
 import com.coralblocks.coralpool.ObjectPool;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.memory.SharedMemory;
-import com.coralblocks.coralring.util.ArrayLinkedObjectList;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.MemoryVolatileLong;
@@ -72,7 +72,7 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 	private final Builder<E> builder;
 	private final int maxObjectSize;
 	private final ObjectPool<E> dataPool;
-	private final ArrayLinkedObjectList<E> dataList;
+	private final ArrayLinkedList<E> dataList;
 	private final boolean isPowerOfTwo;
 
 	/**
@@ -103,7 +103,7 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 			}
 		};
 		this.dataPool = new ArrayObjectPool<E>(256, poolBuilder);
-		this.dataList = new ArrayLinkedObjectList<E>(256);
+		this.dataList = new ArrayLinkedList<E>(256);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
 	
