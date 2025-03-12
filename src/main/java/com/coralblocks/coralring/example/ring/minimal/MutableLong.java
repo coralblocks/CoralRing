@@ -56,7 +56,6 @@ public class MutableLong implements MemorySerializable {
 	 * Gets the current long value.
 	 *
 	 * @return the long value
-	 * @throws NullPointerException if the value is null
 	 */
 	public long get() {
 		return value;
