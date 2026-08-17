@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.github.coralblocks</groupId>
       <artifactId>CoralDS</artifactId>
-      <version>1.3.3</version>
+      <version>1.3.4</version>
     </dependency>
 
     <dependency>
