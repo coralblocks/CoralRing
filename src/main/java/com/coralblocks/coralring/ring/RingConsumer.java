@@ -22,6 +22,9 @@ import com.coralblocks.coralring.util.Builder;
 /**
  * An interface describing the behavior of a ring consumer using {@link Memory} to read data (i.e. messages) from the other side.
  * Each message is associated with a unique sequence number.
+ *
+ * <p><strong>IMPORTANT:</strong> A ring consumer owns and reuses a single mutable message instance. Every call to {@link #fetch()} or
+ * {@link #fetch(boolean)} overwrites that same instance. Process or copy the message before fetching again; do not retain the returned reference.</p>
  * 
  * @param <E> The message mutable class implementing {@link MemorySerializable} that will be transferred through this ring
  */
@@ -70,24 +73,32 @@ public interface RingConsumer<E extends MemorySerializable> {
 	public long getLastOfferedSequence();
 	
 	/**
-	 * The number of messages that can be fetched by the ring consumer.
+	 * The number of messages that can be fetched by the ring consumer. This is a snapshot; only advance through up to the positive
+	 * number returned before checking availability again.
 	 * 
 	 * @return the number of messages available to be fetched
 	 */
 	public long availableToFetch();
 	
 	/**
-	 * Fetch the next available message.
+	 * Fetch the next available message. This method does not check availability; the caller must first obtain a positive value from
+	 * {@link #availableToFetch()}. When {@code remove} is true, do not advance through more messages than that value.
+	 *
+	 * <p><strong>IMPORTANT:</strong> The returned mutable instance is owned by this consumer and is overwritten by the next fetch.
+	 * Process or copy its contents immediately instead of retaining the reference.</p>
 	 * 
-	 * @param remove true to remove the object (false if you just want to inspect but not to remove)
-	 * @return the next available message
+	 * @param remove true to advance the consumer after reading; false to inspect the next message without advancing
+	 * @return the reused next-message instance, or null when the implementation rejects the message, such as after a checksum failure
 	 */
 	public E fetch(boolean remove);
 	
 	/**
-	 * Fetch the next available message. This message simply calls {@link #fetch(boolean)} with <code>true</code>.
+	 * Fetch the next available message. This method simply calls {@link #fetch(boolean)} with <code>true</code> and does not check availability.
+	 *
+	 * <p><strong>IMPORTANT:</strong> The returned mutable instance is owned by this consumer and is overwritten by the next fetch.
+	 * Process or copy its contents immediately instead of retaining the reference.</p>
 	 * 
-	 * @return the next available message
+	 * @return the reused next-message instance, or null when the implementation rejects the message, such as after a checksum failure
 	 */
 	public E fetch();
 	
