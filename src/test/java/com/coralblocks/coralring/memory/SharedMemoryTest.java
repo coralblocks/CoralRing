@@ -24,6 +24,24 @@ import org.junit.Test;
 public class SharedMemoryTest {
 
 	@Test
+	public void testMismatchedAttachDoesNotResizeExistingFile() {
+
+		final String filename = "test-shared-memory-size-mismatch.mmap";
+		Memory initialMemory = new SharedMemory(64, filename);
+		initialMemory.release(false);
+
+		try {
+			Assert.assertThrows(IllegalArgumentException.class, () -> {
+				Memory mismatchedMemory = new SharedMemory(32, filename);
+				mismatchedMemory.release(false);
+			});
+			Assert.assertEquals(64, SharedMemory.findFileSize(filename));
+		} finally {
+			new java.io.File(filename).delete();
+		}
+	}
+
+	@Test
 	public void testPutByteBufferUsesAndAdvancesSourcePosition() {
 
 		Memory memory = new SharedMemory(4);

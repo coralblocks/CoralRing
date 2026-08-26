@@ -189,7 +189,14 @@ public class SharedMemory implements Memory {
 
 			this.filename = filename;
 			RandomAccessFile file = new RandomAccessFile(filename, "rw");
-			file.setLength(size);
+			long fileSize = file.length();
+			if (fileSize == 0) {
+				file.setLength(size);
+			} else if (fileSize != size) {
+				file.close();
+				throw new IllegalArgumentException("Shared memory file size mismatch for " + filename
+						+ ": expected " + size + " bytes but found " + fileSize + " bytes");
+			}
 			FileChannel fileChannel = file.getChannel();
 			if (isJava21) {
 				this.mbb = (MappedByteBuffer) mmap.invoke(fileChannel, MapMode.READ_WRITE, 0L, this.size);
@@ -203,6 +210,8 @@ public class SharedMemory implements Memory {
 			}
 			fileChannel.close();
 			file.close();
+		} catch(IllegalArgumentException e) {
+			throw e;
 		} catch(Exception e) {
 			throw new RuntimeException("Cannot mmap shared memory!", e);
 		}
