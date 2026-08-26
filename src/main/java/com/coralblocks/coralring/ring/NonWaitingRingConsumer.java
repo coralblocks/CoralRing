@@ -37,6 +37,10 @@ import com.coralblocks.coralring.util.MemoryVolatileLong;
  * the consumer has fallen behind too much, will lose messages and cannot proceed.
  * </p>
  * <p>
+ * A new consumer starts at sequence zero so it can read any messages still retained by the ring. To ignore retained messages and consume only
+ * messages offered after attaching, call <code>setLastFetchedSequence(getLastOfferedSequence())</code> immediately after construction.
+ * </p>
+ * <p>
  * The shared memory allocated for the ring contains a header space where the producer sequence number is kept and maintained for mutual access.
  * A memory barrier is implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
  * memory operations.
