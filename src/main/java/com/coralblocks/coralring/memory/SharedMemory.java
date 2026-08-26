@@ -377,6 +377,9 @@ public class SharedMemory implements Memory {
 		if (!dst.isDirect()) {
 			throw new RuntimeException("getByteBuffer can only take a direct byte buffer!");
 		}
+		if (len < 0 || len > dst.remaining()) {
+			throw new IllegalArgumentException("Invalid length: " + len + " (remaining=" + dst.remaining() + ")");
+		}
 		try {
 			long dstAddress = (long) addressField.get(dst);
 			dstAddress += dst.position();

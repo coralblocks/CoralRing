@@ -15,11 +15,53 @@
  */
 package com.coralblocks.coralring.memory;
 
+import java.nio.ByteBuffer;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 
 public class SharedMemoryTest {
+
+	@Test
+	public void testGetByteBufferRejectsNegativeLength() {
+
+		Memory memory = new SharedMemory(8);
+		try {
+			ByteBuffer destination = ByteBuffer.allocateDirect(8);
+			Assert.assertThrows(IllegalArgumentException.class,
+					() -> memory.getByteBuffer(memory.getPointer(), destination, -1));
+			Assert.assertEquals(0, destination.position());
+		} finally {
+			memory.release(true);
+		}
+	}
+
+	@Test
+	public void testGetByteBufferRejectsLengthBeyondRemainingBeforeCopying() {
+
+		Memory memory = new SharedMemory(8);
+		try {
+			long address = memory.getPointer();
+			memory.putByte(address, (byte) 1);
+			memory.putByte(address + 1, (byte) 2);
+			memory.putByte(address + 2, (byte) 3);
+
+			ByteBuffer destination = ByteBuffer.allocateDirect(8);
+			destination.position(2).limit(4);
+
+			Assert.assertThrows(IllegalArgumentException.class,
+					() -> memory.getByteBuffer(address, destination, 3));
+
+			destination.limit(destination.capacity());
+			Assert.assertEquals(2, destination.position());
+			Assert.assertEquals(0, destination.get(2));
+			Assert.assertEquals(0, destination.get(3));
+			Assert.assertEquals(0, destination.get(4));
+		} finally {
+			memory.release(true);
+		}
+	}
 	
 	@Test
 	public void testRegularPutAndGet() {

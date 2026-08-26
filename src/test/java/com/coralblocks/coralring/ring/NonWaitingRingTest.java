@@ -24,6 +24,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.coralblocks.coralring.example.ring.Message;
+import com.coralblocks.coralring.util.Builder;
+import com.coralblocks.coralring.util.PayloadByteBufferMessage;
 
 
 public class NonWaitingRingTest {
@@ -460,6 +462,42 @@ public class NonWaitingRingTest {
 					+ NonWaitingRingProducer.CHECKSUM_LENGTH
 					+ Message.getMaxSize() - 1;
 			ringProducer.getMemory().putByte(lastMessageByteAddress, (byte) 'Y');
+
+			Assert.assertNull(ringConsumer.fetch(false));
+			Assert.assertNull(ringConsumer.fetch());
+		} finally {
+			ringProducer.close(false);
+			ringConsumer.close(true);
+		}
+	}
+
+	@Test
+	public void testChecksumRejectsInvalidPayloadSize() {
+
+		final String filename = "test-nonwaiting-ring-invalid-payload-size.mmap";
+		final int maxPayloadSize = 8;
+		final Builder<PayloadByteBufferMessage> builder = new Builder<PayloadByteBufferMessage>() {
+			@Override
+			public PayloadByteBufferMessage newInstance() {
+				return new PayloadByteBufferMessage(maxPayloadSize);
+			}
+		};
+
+		final RingProducer<PayloadByteBufferMessage> ringProducer = new NonWaitingRingProducer<PayloadByteBufferMessage>(
+				PayloadByteBufferMessage.getMaxSize(maxPayloadSize), builder, filename, true);
+		final RingConsumer<PayloadByteBufferMessage> ringConsumer = new NonWaitingRingConsumer<PayloadByteBufferMessage>(
+				PayloadByteBufferMessage.getMaxSize(maxPayloadSize), builder, filename, true);
+
+		try {
+			PayloadByteBufferMessage message = ringProducer.nextToDispatch();
+			message.payloadSize = 1;
+			message.payload.put((byte) 1);
+			ringProducer.flush();
+
+			long payloadSizeAddress = ringProducer.getMemory().getPointer()
+					+ NonWaitingRingProducer.HEADER_SIZE
+					+ NonWaitingRingProducer.CHECKSUM_LENGTH;
+			ringProducer.getMemory().putInt(payloadSizeAddress, Integer.MAX_VALUE);
 
 			Assert.assertNull(ringConsumer.fetch(false));
 			Assert.assertNull(ringConsumer.fetch());

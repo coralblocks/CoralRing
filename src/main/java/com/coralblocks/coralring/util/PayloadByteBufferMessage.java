@@ -29,9 +29,12 @@ import com.coralblocks.coralring.memory.MemorySerializable;
  * <p>Note that the max payload size must be known beforehand.</p>
  */
 public class PayloadByteBufferMessage implements MemorySerializable {
+
+	private static final int PAYLOAD_SIZE_LENGTH = Integer.BYTES; // 4
 	
 	public int payloadSize;
 	public final ByteBuffer payload;
+	private boolean invalidPayloadSize;
 	
 	/**
 	 * Return the max possible size of this object
@@ -40,7 +43,7 @@ public class PayloadByteBufferMessage implements MemorySerializable {
 	 * @return the max size of this object
 	 */
 	public static final int getMaxSize(int maxPayloadSize) {
-		return 4 /* payloadSize int size */ + maxPayloadSize;
+		return PAYLOAD_SIZE_LENGTH + maxPayloadSize;
 	}
 	
 	/**
@@ -55,17 +58,23 @@ public class PayloadByteBufferMessage implements MemorySerializable {
 	@Override
 	public int writeTo(long address, Memory memory) {
 		memory.putInt(address, payloadSize);
+		if (invalidPayloadSize) return PAYLOAD_SIZE_LENGTH;
 		payload.limit(payloadSize).position(0);
-		memory.putByteBuffer(address + 4, payload, payloadSize);
-		return 4 + payloadSize;
+		memory.putByteBuffer(address + PAYLOAD_SIZE_LENGTH, payload, payloadSize);
+		return PAYLOAD_SIZE_LENGTH + payloadSize;
 	}
 
 	@Override
 	public int readFrom(long address, Memory memory) {
 		this.payloadSize = memory.getInt(address);
 		payload.clear();
-		memory.getByteBuffer(address + 4, payload, payloadSize);
+		this.invalidPayloadSize = payloadSize < 0 || payloadSize > payload.capacity();
+		if (invalidPayloadSize) {
+			payload.flip();
+			return PAYLOAD_SIZE_LENGTH;
+		}
+		memory.getByteBuffer(address + PAYLOAD_SIZE_LENGTH, payload, payloadSize);
 		payload.flip();
-		return 4 + payloadSize;
+		return PAYLOAD_SIZE_LENGTH + payloadSize;
 	}
 }
