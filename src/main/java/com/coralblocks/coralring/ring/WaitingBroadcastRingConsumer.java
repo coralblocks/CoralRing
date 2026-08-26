@@ -74,11 +74,15 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	 * @param filename the file to be used by its shared memory
 	 * @param consumerIndex the index of this consumer
 	 * @param numberOfConsumers the total number of consumers (including this one)
+	 * @throws IllegalArgumentException if the consumer index is invalid
 	 */
 	public WaitingBroadcastRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int consumerIndex, final int numberOfConsumers) {
 		if (numberOfConsumers == -1 && capacity == -1) throw new IllegalArgumentException("capacity or numberOfConsumers must be defined! (at least one)");
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize, numberOfConsumers) : capacity);
 		this.numberOfConsumers = (numberOfConsumers == -1 ? findNumberOfConsumersFromFile(filename, maxObjectSize, capacity) : numberOfConsumers);
+		if (consumerIndex < 0 || consumerIndex >= this.numberOfConsumers) {
+			throw new IllegalArgumentException("Invalid consumerIndex: " + consumerIndex);
+		}
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
 		this.maxObjectSize = maxObjectSize;

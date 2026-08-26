@@ -68,6 +68,30 @@ public class WaitingBroadcastRingTest {
 			ringProducer.close(true);
 		}
 	}
+
+	@Test
+	public void testConsumerRejectsInvalidIndex() {
+
+		final String filename = "test-invalid-broadcast-consumer-index.mmap";
+		final int numberOfConsumers = 2;
+		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
+				4, Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+
+		try {
+			Assert.assertThrows(IllegalArgumentException.class, () -> {
+				WaitingBroadcastRingConsumer<Message> ringConsumer = new WaitingBroadcastRingConsumer<Message>(
+						4, Message.getMaxSize(), Message.class, filename, numberOfConsumers, numberOfConsumers);
+				ringConsumer.close(false);
+			});
+			Assert.assertThrows(IllegalArgumentException.class, () -> {
+				WaitingBroadcastRingConsumer<Message> ringConsumer = new WaitingBroadcastRingConsumer<Message>(
+						4, Message.getMaxSize(), Message.class, filename, -1, numberOfConsumers);
+				ringConsumer.close(false);
+			});
+		} finally {
+			ringProducer.close(true);
+		}
+	}
 	
 	@Test
 	public void testNotWrapping() throws InterruptedException {
