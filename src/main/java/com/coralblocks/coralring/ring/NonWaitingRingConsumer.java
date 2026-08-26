@@ -112,7 +112,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 			this.bbMemory = null;
 		}
 		if (checkChecksum) {
-			this.fallBehindCapacity = capacity; // there is no need for tolerance when using checksum!
+			this.fallBehindCapacity = this.capacity; // there is no need for tolerance when using checksum!
 		} else {
 			this.fallBehindCapacity = calcFallBehindCapacity(this.capacity, fallBehindTolerance);
 		}

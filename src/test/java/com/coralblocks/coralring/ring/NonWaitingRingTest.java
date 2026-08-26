@@ -482,4 +482,21 @@ public class NonWaitingRingTest {
 		ringProducer.close(false);
 		ringConsumer.close(true);
 	}
+
+	@Test
+	public void testFindingCapacityWithChecksum() {
+
+		final String filename = "test-nonwaiting-ring-checksum-capacity.mmap";
+
+		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename, true);
+		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, true);
+
+		try {
+			Assert.assertEquals(ringProducer.getCapacity(), ringConsumer.getCapacity());
+			Assert.assertEquals(0, ringConsumer.availableToFetch());
+		} finally {
+			ringProducer.close(false);
+			ringConsumer.close(true);
+		}
+	}
 }
