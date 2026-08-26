@@ -35,6 +35,11 @@ import com.coralblocks.coralring.util.MemoryVolatileLong;
  * It uses shared memory through a memory-mapped file.
  * </p>
  * <p>
+ * Every declared consumer slot participates from the beginning. A consumer that has not started therefore prevents the producer from advancing
+ * more than the ring capacity. Use {@link #getFetchSequence(int)} to inspect each slot and {@link #disableConsumer(int)} to disable a consumer
+ * that will not run.
+ * </p>
+ * <p>
  * The shared memory allocated for the ring contains a header space where the producer and consumers sequence numbers are kept and maintained for mutual access.
  * Memory barriers are implemented through the {@link MemoryVolatileLong} class, which uses the <code>putLongVolatile</code> and <code>getLongVolatile</code> native 
  * memory operations.
@@ -189,6 +194,25 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 		if (minFetchSequence > Long.MAX_VALUE - capacity) return Long.MAX_VALUE;
 		return minFetchSequence + capacity;
 	}
+
+	private final void validateConsumerIndex(int consumerIndex) {
+		if (consumerIndex < 0 || consumerIndex >= fetchSequence.length) {
+			throw new IllegalArgumentException("Invalid consumerIndex: " + consumerIndex);
+		}
+	}
+
+	/**
+	 * Returns the last sequence completed by the given consumer. A value of zero means that the consumer has not made progress,
+	 * and {@link Long#MAX_VALUE} means that the consumer has been disabled.
+	 *
+	 * @param consumerIndex the index of the consumer
+	 * @return the last sequence completed by the consumer
+	 * @throws IllegalArgumentException if the consumer index is invalid
+	 */
+	public final long getFetchSequence(int consumerIndex) {
+		validateConsumerIndex(consumerIndex);
+		return fetchSequence[consumerIndex].get();
+	}
 	
 	/**
 	 * This method disables a consumer and allows the producer to continue to operate and make progress without having to wait
@@ -203,9 +227,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	 * @throws IllegalArgumentException if the consumer index is invalid
 	 */
 	public final void disableConsumer(int consumerIndex) {
-		if (consumerIndex < 0 || consumerIndex >= fetchSequence.length) {
-			throw new IllegalArgumentException("Invalid consumerIndex: " + consumerIndex);
-		}
+		validateConsumerIndex(consumerIndex);
 		this.fetchSequence[consumerIndex].set(Long.MAX_VALUE);
 	}
 	

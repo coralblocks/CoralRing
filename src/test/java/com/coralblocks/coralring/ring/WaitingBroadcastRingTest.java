@@ -33,6 +33,48 @@ import com.coralblocks.coralring.example.ring.Message;
 public class WaitingBroadcastRingTest {
 
 	@Test
+	public void testFetchSequenceIdentifiesAbsentConsumer() {
+
+		final String filename = "test-absent-broadcast-consumer.mmap";
+		final int capacity = 4;
+		final int numberOfConsumers = 2;
+		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
+				capacity, Message.getMaxSize(), Message.class, filename, numberOfConsumers);
+		final RingConsumer<Message> ringConsumer = new WaitingBroadcastRingConsumer<Message>(
+				capacity, Message.getMaxSize(), Message.class, filename, 0, numberOfConsumers);
+
+		try {
+			for(int i = 0; i < capacity; i++) {
+				Message message = ringProducer.nextToDispatch();
+				Assert.assertNotNull(message);
+				message.value = i;
+			}
+			ringProducer.flush();
+
+			for(int i = 0; i < capacity; i++) Assert.assertNotNull(ringConsumer.fetch());
+			ringConsumer.doneFetching();
+
+			Assert.assertEquals(capacity, ringProducer.getFetchSequence(0));
+			Assert.assertEquals(0, ringProducer.getFetchSequence(1));
+			Assert.assertNull(ringProducer.nextToDispatch());
+
+			ringProducer.disableConsumer(1);
+			Assert.assertEquals(Long.MAX_VALUE, ringProducer.getFetchSequence(1));
+
+			Message message = ringProducer.nextToDispatch();
+			Assert.assertNotNull(message);
+			message.value = capacity;
+			ringProducer.flush();
+
+			Assert.assertThrows(IllegalArgumentException.class, () -> ringProducer.getFetchSequence(-1));
+			Assert.assertThrows(IllegalArgumentException.class, () -> ringProducer.getFetchSequence(numberOfConsumers));
+		} finally {
+			ringConsumer.close(false);
+			ringProducer.close(true);
+		}
+	}
+
+	@Test
 	public void testDisableOnlyConsumerDoesNotBlockProducer() {
 
 		final String filename = "test-disable-only-broadcast-consumer.mmap";
