@@ -41,6 +41,11 @@ public class SharedMemory implements Memory {
 	// Long.MAX_VALUE = 8,388,608 terabytes
 	// Let's not go overboard and set a max of 4,194,304 terabytes (half of MAX_VALUE)
 	public static final long MAX_SIZE = Long.MAX_VALUE / 2L;
+
+	private static final String REQUIRED_JVM_FLAGS = "--add-opens java.base/sun.nio.ch=ALL-UNNAMED "
+			+ "--add-opens java.base/java.nio=ALL-UNNAMED";
+	private static final String JVM_ACCESS_HELP = " Ensure this is a supported JDK and start the JVM with: "
+			+ REQUIRED_JVM_FLAGS;
 	
 	private static Unsafe unsafe;
 	private static boolean UNSAFE_AVAILABLE = false;
@@ -103,7 +108,7 @@ public class SharedMemory implements Memory {
 			
 			ADDRESS_AVAILABLE = true;
 			
-		} catch (Exception e) {
+		} catch (Exception | LinkageError e) {
 			// throw exception later when we try to allocate memory in the constructor
 		}
 		
@@ -154,15 +159,16 @@ public class SharedMemory implements Memory {
 	public SharedMemory(long size, String filename) {
 		
 		if (!UNSAFE_AVAILABLE) {
-			throw new IllegalStateException("sun.misc.Unsafe is not accessible!");
+			throw new IllegalStateException("sun.misc.Unsafe is not accessible!" + JVM_ACCESS_HELP);
 		}
 		
 		if (mappingStrategy == null) {
-			throw new IllegalStateException("Cannot get map and unmap methods from FileChannel through reflection!");
+			throw new IllegalStateException("Cannot get map and unmap methods from FileChannel through reflection!"
+					+ JVM_ACCESS_HELP);
 		}
 		
 		if (!ADDRESS_AVAILABLE) {
-			throw new IllegalStateException("Cannot get address field from Buffer through reflection!");
+			throw new IllegalStateException("Cannot get address field from Buffer through reflection!" + JVM_ACCESS_HELP);
 		}
 		
 		if (size == -1) {
