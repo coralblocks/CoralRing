@@ -263,7 +263,7 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 				bbMemory.putLong(bbMemory.getPointer(), seq); // use the sequence too
 				int len = obj.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 				ByteBuffer bb = bbMemory.getByteBuffer();
-				bb.limit(len).position(0);
+				bb.limit(SEQUENCE_LENGTH + len).position(0);
 				memory.putLong(offset, FastHash.hash64(bb));
 			} else {
 				memory.putLong(offset, 0L);

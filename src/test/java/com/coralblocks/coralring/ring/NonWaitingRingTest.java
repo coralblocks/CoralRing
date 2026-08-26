@@ -440,6 +440,34 @@ public class NonWaitingRingTest {
 		long sumOfAllBatches = batchesReceived.stream().mapToLong(Long::longValue).sum();
 		Assert.assertEquals(messagesToSend, sumOfAllBatches);
 	}
+
+	@Test
+	public void testChecksumIncludesLastMessageByte() {
+
+		final String filename = "test-nonwaiting-ring-checksum-corruption.mmap";
+
+		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(Message.getMaxSize(), Message.class, filename, true);
+		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, true);
+
+		try {
+			Message message = ringProducer.nextToDispatch();
+			message.value = 1;
+			message.last = false;
+			ringProducer.flush();
+
+			long lastMessageByteAddress = ringProducer.getMemory().getPointer()
+					+ NonWaitingRingProducer.HEADER_SIZE
+					+ NonWaitingRingProducer.CHECKSUM_LENGTH
+					+ Message.getMaxSize() - 1;
+			ringProducer.getMemory().putByte(lastMessageByteAddress, (byte) 'Y');
+
+			Assert.assertNull(ringConsumer.fetch(false));
+			Assert.assertNull(ringConsumer.fetch());
+		} finally {
+			ringProducer.close(false);
+			ringConsumer.close(true);
+		}
+	}
 	
 	@Test
 	public void testFindingCapacity() {

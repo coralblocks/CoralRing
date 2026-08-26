@@ -374,7 +374,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq);
 			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 			ByteBuffer bb = bbMemory.getByteBuffer();
-			bb.limit(len).position(0);
+			bb.limit(SEQUENCE_LENGTH + len).position(0);
 			long calculatedChecksum = FastHash.hash64(bb);
 			
 			if (checksum != calculatedChecksum) {
@@ -403,7 +403,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq + 1);
 			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
 			ByteBuffer bb = bbMemory.getByteBuffer();
-			bb.limit(len).position(0);
+			bb.limit(SEQUENCE_LENGTH + len).position(0);
 			long calculatedChecksum = FastHash.hash64(bb);
 			
 			if (checksum != calculatedChecksum) {
