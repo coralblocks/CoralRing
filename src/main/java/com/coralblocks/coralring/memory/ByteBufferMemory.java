@@ -26,6 +26,7 @@ public class ByteBufferMemory implements Memory {
 	public static final boolean USE_DIRECT_BYTE_BUFFER = true;
 	
 	private ByteBuffer bb;
+	private ByteBuffer primitiveAccessor;
 	
 	/**
 	 * Creates a new <code>ByteBufferMemory</code> with the given size.
@@ -39,6 +40,7 @@ public class ByteBufferMemory implements Memory {
 		} else {
 			this.bb = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
 		}
+		this.primitiveAccessor = bb.duplicate().order(ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**
@@ -72,62 +74,47 @@ public class ByteBufferMemory implements Memory {
 	@Override
 	public void release(boolean deleteFileIfUsed) {
 		this.bb = null; // this is actually necessary to release native memory (believe it or not)
+		this.primitiveAccessor = null;
 	}
 
 	@Override
 	public long getLong(long address) {
-		int pos = (int) address;
-		bb.limit(pos + 8).position(pos);
-		return bb.getLong();
+		return primitiveAccessor.getLong((int) address);
 	}
 
 	@Override
 	public void putLong(long address, long value) {
-		int pos = (int) address;
-		bb.limit(pos + 8).position(pos);
-		bb.putLong(value);
+		primitiveAccessor.putLong((int) address, value);
 	}
 
 	@Override
 	public int getInt(long address) {
-		int pos = (int) address;
-		bb.limit(pos + 4).position(pos);
-		return bb.getInt();
+		return primitiveAccessor.getInt((int) address);
 	}
 
 	@Override
 	public void putInt(long address, int value) {
-		int pos = (int) address;
-		bb.limit(pos + 4).position(pos);
-		bb.putInt(value);		
+		primitiveAccessor.putInt((int) address, value);
 	}
 
 	@Override
 	public byte getByte(long address) {
-		int pos = (int) address;
-		bb.limit(pos + 1).position(pos);
-		return bb.get();
+		return primitiveAccessor.get((int) address);
 	}
 
 	@Override
 	public void putByte(long address, byte value) {
-		int pos = (int) address;
-		bb.limit(pos + 1).position(pos);
-		bb.put(value);		
+		primitiveAccessor.put((int) address, value);
 	}
 
 	@Override
 	public short getShort(long address) {
-		int pos = (int) address;
-		bb.limit(pos + 2).position(pos);
-		return bb.getShort();
+		return primitiveAccessor.getShort((int) address);
 	}
 
 	@Override
 	public void putShort(long address, short value) {
-		int pos = (int) address;
-		bb.limit(pos + 2).position(pos);
-		bb.putShort(value);
+		primitiveAccessor.putShort((int) address, value);
 	}
 
 	@Override
