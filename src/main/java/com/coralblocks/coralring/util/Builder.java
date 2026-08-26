@@ -37,15 +37,16 @@ public interface Builder<E> {
 	 * @return a new builder for the given class
 	 */
 	public static <E> Builder<E> createBuilder(final Class<E> klass) {
+		if (klass == null) throw new IllegalArgumentException("klass cannot be null");
 		return new Builder<E>() {
 			@Override
-            public E newInstance() {
-	            try {
-	            	return klass.getDeclaredConstructor().newInstance();
-	            } catch(Exception e) {
-	            	throw new RuntimeException(e);
-	            }
-            }
+			public E newInstance() {
+				try {
+					return klass.getDeclaredConstructor().newInstance();
+				} catch(Exception e) {
+					throw new IllegalStateException("Cannot create instance of " + klass.getName(), e);
+				}
+			}
 		};
 	}
 }

@@ -110,6 +110,18 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	 * @param initialBatchSize the number of message instances to preallocate for producer batches
 	 */
 	public NonWaitingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final boolean writeChecksum, final int initialBatchSize) {
+		if (capacity <= 0) {
+			throw new IllegalArgumentException("capacity (" + capacity + ") must be greater than zero");
+		}
+		if (maxObjectSize <= 0) {
+			throw new IllegalArgumentException("maxObjectSize (" + maxObjectSize + ") must be greater than zero");
+		}
+		if (builder == null) {
+			throw new IllegalArgumentException("builder cannot be null");
+		}
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
 		if (initialBatchSize < 1) {
 			throw new IllegalArgumentException("initialBatchSize (" + initialBatchSize + ") must be greater than zero");
 		}

@@ -24,6 +24,23 @@ import org.junit.Test;
 public class SharedMemoryTest {
 
 	@Test
+	public void testRejectsInvalidArgumentsWithSpecificExceptions() {
+		Assert.assertThrows(IllegalArgumentException.class, () -> new SharedMemory(64, null));
+		Assert.assertThrows(IllegalArgumentException.class,
+				() -> SharedMemory.findFileSize("test-missing-shared-memory-file.mmap"));
+
+		Memory memory = new SharedMemory(8);
+		try {
+			Assert.assertThrows(IllegalArgumentException.class,
+					() -> memory.putByteBuffer(memory.getPointer(), ByteBuffer.allocate(8), 1));
+			Assert.assertThrows(IllegalArgumentException.class,
+					() -> memory.getByteBuffer(memory.getPointer(), ByteBuffer.allocate(8), 1));
+		} finally {
+			memory.release(true);
+		}
+	}
+
+	@Test
 	public void testReleaseIsIdempotent() {
 
 		final String retainedFilename = "test-shared-memory-idempotent-retain.mmap";

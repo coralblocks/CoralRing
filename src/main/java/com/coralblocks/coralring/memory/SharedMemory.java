@@ -18,6 +18,7 @@ package com.coralblocks.coralring.memory;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
@@ -158,6 +159,9 @@ public class SharedMemory implements Memory {
 	 * @param filename the name of the file
 	 */
 	public SharedMemory(long size, String filename) {
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
 		
 		if (!UNSAFE_AVAILABLE) {
 			throw new IllegalStateException("sun.misc.Unsafe is not accessible!" + JVM_ACCESS_HELP);
@@ -191,7 +195,7 @@ public class SharedMemory implements Memory {
 				File file = new File(fileDir);
 				if (!file.exists()) {
 					if (!file.mkdirs()) {
-						throw new RuntimeException("Cannot create store dir: " + fileDir + " for " + filename);
+						throw new IllegalStateException("Cannot create store dir: " + fileDir + " for " + filename);
 					}
 				}
 			}
@@ -223,10 +227,10 @@ public class SharedMemory implements Memory {
 						throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
 				}
 			}
-		} catch(IllegalArgumentException e) {
+		} catch(IllegalArgumentException | IllegalStateException e) {
 			throw e;
 		} catch(Exception e) {
-			throw new RuntimeException("Cannot mmap shared memory!", e);
+			throw new IllegalStateException("Cannot mmap shared memory: " + filename, e);
 		}
 	}
 	
@@ -237,9 +241,10 @@ public class SharedMemory implements Memory {
 	 * @return the size in bytes of the file
 	 */
 	public static final long findFileSize(String filename) {
+		if (filename == null) throw new IllegalArgumentException("filename cannot be null");
 		File file = new File(filename);
-		if (!file.exists()) throw new RuntimeException("File not found: " + filename);
-		if (file.isDirectory()) throw new RuntimeException("File is a directory: " + filename);
+		if (!file.exists()) throw new IllegalArgumentException("File not found: " + filename);
+		if (file.isDirectory()) throw new IllegalArgumentException("File is a directory: " + filename);
 		return file.length();
 	}
 	
@@ -286,7 +291,7 @@ public class SharedMemory implements Memory {
 					throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
 			}
 		} catch(Exception e) {
-			firstException = new RuntimeException("Cannot release mmap shared memory!", e);
+			firstException = new IllegalStateException("Cannot release mmap shared memory!", e);
 		}
 
 		if (deleteFileIfUsed) {
@@ -309,7 +314,7 @@ public class SharedMemory implements Memory {
         try {
             Files.deleteIfExists(path); // if someone else deleted it
         } catch (IOException e) {
-			throw new RuntimeException("Failed to delete the file: " + filename, e);
+			throw new UncheckedIOException("Failed to delete the file: " + filename, e);
         }
 	}
 
@@ -396,7 +401,7 @@ public class SharedMemory implements Memory {
 	@Override
 	public void putByteBuffer(long address, ByteBuffer src, int len) {
 		if (!src.isDirect()) {
-			throw new RuntimeException("putByteBuffer can only take a direct byte buffer!");
+			throw new IllegalArgumentException("putByteBuffer can only take a direct byte buffer!");
 		}
 		if (len < 0 || len > src.remaining()) {
 			throw new IllegalArgumentException("Invalid length: " + len + " (remaining=" + src.remaining() + ")");
@@ -407,14 +412,14 @@ public class SharedMemory implements Memory {
 			unsafe.copyMemory(srcAddress, address, len);
 			src.position(src.position() + len);
 		} catch(Exception e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException("Cannot access direct source buffer address", e);
 		}
 	}
 
 	@Override
 	public void getByteBuffer(long address, ByteBuffer dst, int len) {
 		if (!dst.isDirect()) {
-			throw new RuntimeException("getByteBuffer can only take a direct byte buffer!");
+			throw new IllegalArgumentException("getByteBuffer can only take a direct byte buffer!");
 		}
 		if (len < 0 || len > dst.remaining()) {
 			throw new IllegalArgumentException("Invalid length: " + len + " (remaining=" + dst.remaining() + ")");
@@ -425,7 +430,7 @@ public class SharedMemory implements Memory {
 			unsafe.copyMemory(address, dstAddress, len);
 			dst.position(dst.position() + len);
 		} catch(Exception e) {
-			throw new RuntimeException(e);
+			throw new IllegalStateException("Cannot access direct destination buffer address", e);
 		}
 	}
 

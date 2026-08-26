@@ -77,9 +77,30 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	 * @throws IllegalArgumentException if the consumer index is invalid
 	 */
 	public WaitingBroadcastRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int consumerIndex, final int numberOfConsumers) {
+		if (capacity != -1 && capacity <= 0) {
+			throw new IllegalArgumentException("capacity must be -1 or greater than zero: " + capacity);
+		}
+		if (maxObjectSize <= 0) {
+			throw new IllegalArgumentException("maxObjectSize (" + maxObjectSize + ") must be greater than zero");
+		}
+		if (builder == null) {
+			throw new IllegalArgumentException("builder cannot be null");
+		}
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
+		if (numberOfConsumers != -1 && numberOfConsumers <= 0) {
+			throw new IllegalArgumentException("numberOfConsumers must be -1 or greater than zero: " + numberOfConsumers);
+		}
 		if (numberOfConsumers == -1 && capacity == -1) throw new IllegalArgumentException("capacity or numberOfConsumers must be defined! (at least one)");
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize, numberOfConsumers) : capacity);
 		this.numberOfConsumers = (numberOfConsumers == -1 ? findNumberOfConsumersFromFile(filename, maxObjectSize, capacity) : numberOfConsumers);
+		if (this.capacity <= 0) {
+			throw new IllegalArgumentException("Cannot derive a positive capacity from file: " + filename);
+		}
+		if (this.numberOfConsumers <= 0) {
+			throw new IllegalArgumentException("Cannot derive a positive numberOfConsumers from file: " + filename);
+		}
 		if (consumerIndex < 0 || consumerIndex >= this.numberOfConsumers) {
 			throw new IllegalArgumentException("Invalid consumerIndex: " + consumerIndex);
 		}
@@ -173,7 +194,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	
 	private static final int findCapacityFromFile(String filename, int maxObjectSize, int numberOfConsumers) {
 		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
+		if (!file.exists() || file.isDirectory()) throw new IllegalArgumentException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
 		long headerSize = CPU_CACHE_LINE + CPU_CACHE_LINE * numberOfConsumers; // 1 producer sequence + 1 sequence for each consumer
 		return (int) ((totalMemorySize - headerSize) / MathUtils.alignTo8Bytes(maxObjectSize));
@@ -181,7 +202,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	
 	private static final int findNumberOfConsumersFromFile(String filename, int maxObjectSize, int capacity) {
 		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
+		if (!file.exists() || file.isDirectory()) throw new IllegalArgumentException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
 		return (int) ((totalMemorySize - capacity * MathUtils.alignTo8Bytes(maxObjectSize) - CPU_CACHE_LINE) / CPU_CACHE_LINE);
 	}
@@ -247,7 +268,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	@Override
 	public final void rollBack(long count) {
 		if (count < 0 || count > fetchCount) {
-			throw new RuntimeException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
+			throw new IllegalArgumentException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
 		}
 		lastFetchedSeq -= count;
 		fetchCount -= count;

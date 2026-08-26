@@ -105,6 +105,21 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	 * @param initialBatchSize the number of message instances to preallocate for producer batches
 	 */
 	public WaitingBroadcastRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int numberOfConsumers, final int initialBatchSize) {
+		if (capacity <= 0) {
+			throw new IllegalArgumentException("capacity (" + capacity + ") must be greater than zero");
+		}
+		if (maxObjectSize <= 0) {
+			throw new IllegalArgumentException("maxObjectSize (" + maxObjectSize + ") must be greater than zero");
+		}
+		if (builder == null) {
+			throw new IllegalArgumentException("builder cannot be null");
+		}
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
+		if (numberOfConsumers <= 0) {
+			throw new IllegalArgumentException("numberOfConsumers (" + numberOfConsumers + ") must be greater than zero");
+		}
 		if (initialBatchSize < 1) {
 			throw new IllegalArgumentException("initialBatchSize (" + initialBatchSize + ") must be greater than zero");
 		}

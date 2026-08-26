@@ -75,7 +75,22 @@ public class WaitingRingConsumer<E extends MemorySerializable> implements RingCo
 	 * @param filename the file to be used by its shared memory
 	 */
 	public WaitingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename) {
+		if (capacity != -1 && capacity <= 0) {
+			throw new IllegalArgumentException("capacity must be -1 or greater than zero: " + capacity);
+		}
+		if (maxObjectSize <= 0) {
+			throw new IllegalArgumentException("maxObjectSize (" + maxObjectSize + ") must be greater than zero");
+		}
+		if (builder == null) {
+			throw new IllegalArgumentException("builder cannot be null");
+		}
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
+		if (this.capacity <= 0) {
+			throw new IllegalArgumentException("Cannot derive a positive capacity from file: " + filename);
+		}
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
 		this.slotSize = MathUtils.alignTo8Bytes(maxObjectSize);
@@ -150,7 +165,7 @@ public class WaitingRingConsumer<E extends MemorySerializable> implements RingCo
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {
 		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
+		if (!file.exists() || file.isDirectory()) throw new IllegalArgumentException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
 		return calcCapacity(totalMemorySize, MathUtils.alignTo8Bytes(maxObjectSize));
 	}
@@ -220,7 +235,7 @@ public class WaitingRingConsumer<E extends MemorySerializable> implements RingCo
 	@Override
 	public final void rollBack(long count) {
 		if (count < 0 || count > fetchCount) {
-			throw new RuntimeException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
+			throw new IllegalArgumentException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
 		}
 		lastFetchedSeq -= count;
 		fetchCount -= count;

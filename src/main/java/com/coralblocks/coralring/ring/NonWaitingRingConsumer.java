@@ -93,7 +93,23 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	 * @param fallBehindTolerance the percentage of the capacity that the consumer can fall behind before giving up in order to avoid getting too close to the edge
 	 */
 	public NonWaitingRingConsumer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean checkChecksum, float fallBehindTolerance) {
+		if (capacity != -1 && capacity <= 0) {
+			throw new IllegalArgumentException("capacity must be -1 or greater than zero: " + capacity);
+		}
+		if (maxObjectSize <= 0) {
+			throw new IllegalArgumentException("maxObjectSize (" + maxObjectSize + ") must be greater than zero");
+		}
+		if (builder == null) {
+			throw new IllegalArgumentException("builder cannot be null");
+		}
+		if (filename == null) {
+			throw new IllegalArgumentException("filename cannot be null");
+		}
 		this.capacity = (capacity == -1 ? findCapacityFromFile(filename, maxObjectSize) : capacity);
+		if (this.capacity <= 0) {
+			throw new IllegalArgumentException("Cannot derive a positive capacity from file: " + filename);
+		}
+		int resolvedFallBehindCapacity = checkChecksum ? this.capacity : calcFallBehindCapacity(this.capacity, fallBehindTolerance);
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
 		this.maxObjectSize = maxObjectSize;
@@ -107,11 +123,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 		this.lastFetchedSeq = 0;
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
-		if (checkChecksum) {
-			this.fallBehindCapacity = this.capacity; // there is no need for tolerance when using checksum!
-		} else {
-			this.fallBehindCapacity = calcFallBehindCapacity(this.capacity, fallBehindTolerance);
-		}
+		this.fallBehindCapacity = resolvedFallBehindCapacity;
 	}
 
 	/**
@@ -269,7 +281,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	}
 	
 	private static final int calcFallBehindCapacity(int capacity, float fallBehindTolerance) {
-		if (fallBehindTolerance > 1 || fallBehindTolerance <= 0) {
+		if (Float.isNaN(fallBehindTolerance) || fallBehindTolerance > 1 || fallBehindTolerance <= 0) {
 			throw new IllegalArgumentException("Invalid fallBehindTolerance: " + fallBehindTolerance);
 		}
 		if (fallBehindTolerance == 1.0f) return capacity; // sanity
@@ -309,7 +321,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {
 		File file = new File(filename);
-		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
+		if (!file.exists() || file.isDirectory()) throw new IllegalArgumentException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
 		return calcCapacity(totalMemorySize, CHECKSUM_LENGTH + MathUtils.alignTo8Bytes(maxObjectSize));
 	}
@@ -412,7 +424,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	@Override
 	public final void rollBack(long count) {
 		if (count < 0 || count > fetchCount) {
-			throw new RuntimeException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
+			throw new IllegalArgumentException("Invalid rollback request! fetched=" + fetchCount + " requested=" + count);
 		}
 		lastFetchedSeq -= count;
 		fetchCount -= count;
