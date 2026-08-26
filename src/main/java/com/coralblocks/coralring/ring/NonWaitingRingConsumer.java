@@ -16,9 +16,7 @@
 package com.coralblocks.coralring.ring;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 
-import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.memory.SharedMemory;
@@ -64,8 +62,6 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	
 	private static final boolean DEFAULT_CHECK_CHECKSUM = NonWaitingRingProducer.DEFAULT_WRITE_CHECKSUM;
 	
-	private static final int SEQUENCE_LENGTH = NonWaitingRingProducer.SEQUENCE_LENGTH;
-	
 	private static final float FALL_BEHIND_TOLERANCE = 1.0f;
 	
 	private final int capacity;
@@ -83,7 +79,6 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	private final int fallBehindCapacity;
 	private final Builder<E> builder;
 	private final boolean checkChecksum;
-	private final ByteBufferMemory bbMemory;
 
 	/**
 	 * <p>Creates a new non-waiting ring consumer.</p>
@@ -112,11 +107,6 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 		this.lastFetchedSeq = 0;
 		this.data = builder.newInstance();
 		this.checkChecksum = checkChecksum;
-		if (checkChecksum) {
-			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
-		} else {
-			this.bbMemory = null;
-		}
 		if (checkChecksum) {
 			this.fallBehindCapacity = this.capacity; // there is no need for tolerance when using checksum!
 		} else {
@@ -374,16 +364,11 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 			checksum = memory.getLong(offset);
 		}
 		
-		data.readFrom(offset + CHECKSUM_LENGTH, memory);
+		long messageAddress = offset + CHECKSUM_LENGTH;
+		int len = data.readFrom(messageAddress, memory);
 		
 		if (checkChecksum) {
-			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq);
-			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
-			ByteBuffer bb = bbMemory.getByteBuffer();
-			bb.limit(SEQUENCE_LENGTH + len).position(0);
-			long calculatedChecksum = FastHash.hash64(bb);
-			
-			if (checksum != calculatedChecksum) {
+			if (!isChecksumValid(checksum, lastFetchedSeq, messageAddress, len)) {
 				fetchCount--;
 				lastFetchedSeq--;
 				return null;
@@ -403,21 +388,20 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 			checksum = memory.getLong(offset);
 		}
 		
-		data.readFrom(offset + CHECKSUM_LENGTH, memory);
+		long messageAddress = offset + CHECKSUM_LENGTH;
+		int len = data.readFrom(messageAddress, memory);
 		
 		if (checkChecksum) {
-			bbMemory.putLong(bbMemory.getPointer(), lastFetchedSeq + 1);
-			int len = data.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
-			ByteBuffer bb = bbMemory.getByteBuffer();
-			bb.limit(SEQUENCE_LENGTH + len).position(0);
-			long calculatedChecksum = FastHash.hash64(bb);
-			
-			if (checksum != calculatedChecksum) {
+			if (!isChecksumValid(checksum, lastFetchedSeq + 1, messageAddress, len)) {
 				return null;
 			}
 		}
 		
 		return data;
+	}
+
+	private final boolean isChecksumValid(long checksum, long sequence, long messageAddress, int len) {
+		return len >= 0 && len <= maxObjectSize && checksum == FastHash.hash64(memory, messageAddress, len, sequence);
 	}
 	
 	@Override
@@ -441,7 +425,6 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	
 	@Override
 	public final void close(boolean deleteFile) {
-		if (bbMemory != null) bbMemory.release(false);
 		memory.release(deleteFile);
 	}
 }

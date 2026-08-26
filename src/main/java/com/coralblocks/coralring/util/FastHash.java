@@ -18,6 +18,8 @@ package com.coralblocks.coralring.util;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import com.coralblocks.coralring.memory.Memory;
+
 /**
  * <pre>
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -156,6 +158,109 @@ public final class FastHash {
 		return applyFinalHashComputation(h64);
 	}
 
+	private static final long hash64bytes(final Memory memory, final long address, final int len, final long seed) {
+
+		if (len < 0) throw new IllegalArgumentException("len (" + len + ") cannot be negative");
+
+		final long bEnd = address + len;
+		long h64;
+		long p = address;
+
+		if (len >= 32) {
+
+			final long limit = bEnd - 32;
+
+			long v1 = seed + PRIME64_1 + PRIME64_2;
+			long v2 = seed + PRIME64_2;
+			long v3 = seed + 0;
+			long v4 = seed - PRIME64_1;
+
+			do {
+				v1 += memory.getLong(p) * PRIME64_2;
+				p = p + 8;
+				v1 = Long.rotateLeft(v1, 31);
+				v1 *= PRIME64_1;
+
+				v2 += memory.getLong(p) * PRIME64_2;
+				p = p + 8;
+				v2 = Long.rotateLeft(v2, 31);
+				v2 *= PRIME64_1;
+
+				v3 += memory.getLong(p) * PRIME64_2;
+				p = p + 8;
+				v3 = Long.rotateLeft(v3, 31);
+				v3 *= PRIME64_1;
+
+				v4 += memory.getLong(p) * PRIME64_2;
+				p = p + 8;
+				v4 = Long.rotateLeft(v4, 31);
+				v4 *= PRIME64_1;
+
+			} while (p <= limit);
+
+			h64 = Long.rotateLeft(v1, 1) + Long.rotateLeft(v2, 7) + Long.rotateLeft(v3, 12) + Long.rotateLeft(v4, 18);
+
+			v1 *= PRIME64_2;
+			v1 = Long.rotateLeft(v1, 31);
+			v1 *= PRIME64_1;
+			h64 ^= v1;
+
+			h64 = h64 * PRIME64_1 + PRIME64_4;
+
+			v2 *= PRIME64_2;
+			v2 = Long.rotateLeft(v2, 31);
+			v2 *= PRIME64_1;
+			h64 ^= v2;
+
+			h64 = h64 * PRIME64_1 + PRIME64_4;
+
+			v3 *= PRIME64_2;
+			v3 = Long.rotateLeft(v3, 31);
+			v3 *= PRIME64_1;
+			h64 ^= v3;
+
+			h64 = h64 * PRIME64_1 + PRIME64_4;
+
+			v4 *= PRIME64_2;
+			v4 = Long.rotateLeft(v4, 31);
+			v4 *= PRIME64_1;
+			h64 ^= v4;
+
+			h64 = h64 * PRIME64_1 + PRIME64_4;
+
+		} else {
+
+			h64 = seed + PRIME64_5;
+		}
+
+		h64 += len;
+
+		while (p + 8 <= bEnd) {
+			long k1 = memory.getLong(p);
+			k1 *= PRIME64_2;
+			k1 = Long.rotateLeft(k1, 31);
+			k1 *= PRIME64_1;
+			h64 ^= k1;
+			h64 = Long.rotateLeft(h64, 27) * PRIME64_1 + PRIME64_4;
+			p += 8;
+		}
+
+		if (p + 4 <= bEnd) {
+			long finalInt = memory.getInt(p);
+			h64 ^= finalInt * PRIME64_1;
+			h64 = Long.rotateLeft(h64, 23) * PRIME64_2 + PRIME64_3;
+			p += 4;
+		}
+
+		while (p + 1 <= bEnd) {
+			h64 ^= ((long) (memory.getByte(p) & 0x00ff)) * PRIME64_5;
+			h64 = Long.rotateLeft(h64, 11) * PRIME64_1;
+			p++;
+		}
+
+		return applyFinalHashComputation(h64);
+	}
+
 	private static final long applyFinalHashComputation(long h64) {
 		h64 ^= h64 >>> 33;
 		h64 *= PRIME64_2;
@@ -173,6 +278,14 @@ public final class FastHash {
 	
 	public static final long hash64(ByteBuffer buffer, long seed) {
 		return hash64bytes(buffer, seed);
+	}
+
+	public static final long hash64(Memory memory, long address, int len) {
+		return hash64(memory, address, len, SEED);
+	}
+
+	public static final long hash64(Memory memory, long address, int len, long seed) {
+		return hash64bytes(memory, address, len, seed);
 	}
 
 	public static final int hash32(ByteBuffer buffer) {

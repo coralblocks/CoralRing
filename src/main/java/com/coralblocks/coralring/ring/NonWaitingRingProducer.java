@@ -15,14 +15,12 @@
  */
 package com.coralblocks.coralring.ring;
 
-import java.nio.ByteBuffer;
 import java.util.Iterator;
 
 import com.coralblocks.coralds.list.ArrayLinkedList;
 import com.coralblocks.coralpool.ArrayObjectPool;
 import com.coralblocks.coralpool.ObjectBuilder;
 import com.coralblocks.coralpool.ObjectPool;
-import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.memory.SharedMemory;
@@ -67,9 +65,6 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	// The length of the checksum that can be written with every message
 	static final int CHECKSUM_LENGTH = 8;
 	
-	// The length of the sequence number used to calculate the checksum
-	static final int SEQUENCE_LENGTH = 8; // long
-	
 	// One cache line for the producer sequence
 	static final int HEADER_SIZE = CPU_CACHE_LINE;
 	
@@ -90,7 +85,6 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	private final ArrayLinkedList<E> dataList;
 	private final boolean isPowerOfTwo;
 	private final boolean writeChecksum;
-	private final ByteBufferMemory bbMemory;
 
 	/**
 	 * Creates a new non-waiting ring producer.
@@ -140,11 +134,6 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 		this.dataPool = new ArrayObjectPool<E>(initialBatchSize, poolBuilder);
 		this.dataList = new ArrayLinkedList<E>(initialBatchSize);
 		this.writeChecksum = writeChecksum;
-		if (writeChecksum) {
-			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
-		} else {
-			this.bbMemory = null;
-		}
 	}
 	
 	/**
@@ -294,18 +283,17 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 			long offset = calcDataOffset(index);
 			
 			E obj = iter.next();
-			
+			long messageAddress = offset + CHECKSUM_LENGTH;
+			int len = obj.writeTo(messageAddress, memory);
+
 			if (writeChecksum) {
-				bbMemory.putLong(bbMemory.getPointer(), seq); // use the sequence too
-				int len = obj.writeTo(bbMemory.getPointer() + SEQUENCE_LENGTH, bbMemory);
-				ByteBuffer bb = bbMemory.getByteBuffer();
-				bb.limit(SEQUENCE_LENGTH + len).position(0);
-				memory.putLong(offset, FastHash.hash64(bb));
+				if (len < 0 || len > maxObjectSize) {
+					throw new IllegalStateException("Invalid serialized message size: " + len + " (maxObjectSize=" + maxObjectSize + ")");
+				}
+				memory.putLong(offset, FastHash.hash64(memory, messageAddress, len, seq));
 			} else {
 				memory.putLong(offset, 0L);
 			}
-			
-			obj.writeTo(offset + CHECKSUM_LENGTH, memory);
 			dataPool.release(obj);
 			
 			seq++;
@@ -318,7 +306,6 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	
 	@Override
 	public final void close(boolean deleteFile) {
-		if (bbMemory != null) bbMemory.release(false);
 		memory.release(deleteFile);
 	}
 }

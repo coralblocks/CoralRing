@@ -24,11 +24,31 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.coralblocks.coralring.example.ring.Message;
+import com.coralblocks.coralring.memory.Memory;
+import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.PayloadByteBufferMessage;
 
 
 public class NonWaitingRingTest {
+
+	public static class StatefulWriteMessage implements MemorySerializable {
+
+		private int value;
+		private int writeCount;
+
+		@Override
+		public int writeTo(long address, Memory memory) {
+			memory.putInt(address, value + writeCount++);
+			return Integer.BYTES;
+		}
+
+		@Override
+		public int readFrom(long address, Memory memory) {
+			value = memory.getInt(address);
+			return Integer.BYTES;
+		}
+	}
 	
 	@Test
 	public void testNotWrapping() throws InterruptedException {
@@ -501,6 +521,36 @@ public class NonWaitingRingTest {
 
 			Assert.assertNull(ringConsumer.fetch(false));
 			Assert.assertNull(ringConsumer.fetch());
+		} finally {
+			ringProducer.close(false);
+			ringConsumer.close(true);
+		}
+	}
+
+	@Test
+	public void testChecksumDoesNotRequireDeterministicWriteTo() {
+
+		final String filename = "test-nonwaiting-ring-stateful-write.mmap";
+		final RingProducer<StatefulWriteMessage> ringProducer = new NonWaitingRingProducer<StatefulWriteMessage>(
+				Integer.BYTES, StatefulWriteMessage.class, filename, true);
+		final RingConsumer<StatefulWriteMessage> ringConsumer = new NonWaitingRingConsumer<StatefulWriteMessage>(
+				Integer.BYTES, StatefulWriteMessage.class, filename, true);
+
+		try {
+			StatefulWriteMessage message = ringProducer.nextToDispatch();
+			message.value = 42;
+			ringProducer.flush();
+
+			Assert.assertEquals(1, message.writeCount);
+			StatefulWriteMessage received = ringConsumer.fetch(false);
+			Assert.assertNotNull(received);
+			Assert.assertEquals(42, received.value);
+			Assert.assertEquals(0, received.writeCount);
+
+			received = ringConsumer.fetch();
+			Assert.assertNotNull(received);
+			Assert.assertEquals(42, received.value);
+			Assert.assertEquals(0, received.writeCount);
 		} finally {
 			ringProducer.close(false);
 			ringConsumer.close(true);
