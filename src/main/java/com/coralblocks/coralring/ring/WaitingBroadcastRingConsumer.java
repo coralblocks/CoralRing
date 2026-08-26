@@ -179,7 +179,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
-		return (int) ((totalMemorySize - capacity * maxObjectSize - CPU_CACHE_LINE) / CPU_CACHE_LINE);
+		return (int) ((totalMemorySize - (long) capacity * maxObjectSize - CPU_CACHE_LINE) / CPU_CACHE_LINE);
 	}
 	
 	@Override

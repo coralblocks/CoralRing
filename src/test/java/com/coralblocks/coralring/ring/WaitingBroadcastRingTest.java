@@ -15,6 +15,10 @@
  */
 package com.coralblocks.coralring.ring;
 
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -427,5 +431,31 @@ public class WaitingBroadcastRingTest {
 		ringConsumer0.close(false);
 		ringConsumer1.close(false);
 		ringConsumer2.close(true);
+	}
+
+	@Test
+	public void testFindingNumberOfConsumersForLargeRing() throws Exception {
+
+		final int capacity = 1_000_000;
+		final int maxObjectSize = 4_096;
+		final int numberOfConsumers = 3;
+		final long headerSize = ((long) numberOfConsumers + 1) * WaitingBroadcastRingProducer.CPU_CACHE_LINE;
+		final long totalMemorySize = headerSize + (long) capacity * maxObjectSize;
+		final File file = File.createTempFile("test-large-waiting-broadcast-ring-", ".mmap");
+
+		try {
+			try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {
+				randomAccessFile.setLength(totalMemorySize);
+			}
+
+			Method method = WaitingBroadcastRingConsumer.class.getDeclaredMethod(
+					"findNumberOfConsumersFromFile", String.class, int.class, int.class);
+			method.setAccessible(true);
+			int inferredNumberOfConsumers = (int) method.invoke(null, file.getAbsolutePath(), maxObjectSize, capacity);
+
+			Assert.assertEquals(numberOfConsumers, inferredNumberOfConsumers);
+		} finally {
+			Files.deleteIfExists(file.toPath());
+		}
 	}
 }
