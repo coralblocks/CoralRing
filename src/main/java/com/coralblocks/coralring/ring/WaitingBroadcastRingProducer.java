@@ -56,6 +56,9 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	
 	// The default capacity for this shared memory ring
 	static final int DEFAULT_CAPACITY = 1024;
+
+	// The default number of message instances preallocated for producer batches
+	static final int DEFAULT_INITIAL_BATCH_SIZE = 256;
 	
 	// So that the sequence lands in the middle of the cache line
 	static final int SEQ_PREFIX_PADDING = 24;
@@ -88,6 +91,23 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	 * @param numberOfConsumers the number of consumers that will be reading from this ring
 	 */
     public WaitingBroadcastRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int numberOfConsumers) {
+		this(capacity, maxObjectSize, builder, filename, numberOfConsumers, DEFAULT_INITIAL_BATCH_SIZE);
+	}
+
+	/**
+	 * Creates a new ring producer.
+	 *
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param numberOfConsumers the number of consumers that will be reading from this ring
+	 * @param initialBatchSize the number of message instances to preallocate for producer batches
+	 */
+	public WaitingBroadcastRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final int numberOfConsumers, final int initialBatchSize) {
+		if (initialBatchSize < 1) {
+			throw new IllegalArgumentException("initialBatchSize (" + initialBatchSize + ") must be greater than zero");
+		}
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -110,8 +130,8 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 				return builder.newInstance();
 			}
 		};
-		this.dataPool = new ArrayObjectPool<E>(256, poolBuilder);
-		this.dataList = new ArrayLinkedList<E>(256);
+		this.dataPool = new ArrayObjectPool<E>(initialBatchSize, poolBuilder);
+		this.dataList = new ArrayLinkedList<E>(initialBatchSize);
 		this.maxSeqBeforeWrapping = calcMaxSeqBeforeWrapping();
 	}
 	
@@ -126,6 +146,20 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
      */
 	public WaitingBroadcastRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, numberOfConsumers);
+	}
+
+	/**
+	 * Creates a new ring producer.
+	 *
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param numberOfConsumers the number of consumers that will be reading from this ring
+	 * @param initialBatchSize the number of message instances to preallocate for producer batches
+	 */
+	public WaitingBroadcastRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, int numberOfConsumers, int initialBatchSize) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, numberOfConsumers, initialBatchSize);
 	}
 	
 	/**

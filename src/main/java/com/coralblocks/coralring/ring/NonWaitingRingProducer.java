@@ -54,6 +54,9 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	
 	// The default capacity for this shared memory ring
 	static final int DEFAULT_CAPACITY = 1024;
+
+	// The default number of message instances preallocated for producer batches
+	static final int DEFAULT_INITIAL_BATCH_SIZE = 256;
 	
 	// So that the sequence lands in the middle of the cache line
 	static final int SEQ_PREFIX_PADDING = 24;
@@ -99,6 +102,23 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	 * @param writeChecksum true to calculate and write the checksum with each message sent
 	 */
     public NonWaitingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, boolean writeChecksum) {
+		this(capacity, maxObjectSize, builder, filename, writeChecksum, DEFAULT_INITIAL_BATCH_SIZE);
+	}
+
+	/**
+	 * Creates a new non-waiting ring producer.
+	 *
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param builder the builder producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 * @param initialBatchSize the number of message instances to preallocate for producer batches
+	 */
+	public NonWaitingRingProducer(final int capacity, final int maxObjectSize, final Builder<E> builder, final String filename, final boolean writeChecksum, final int initialBatchSize) {
+		if (initialBatchSize < 1) {
+			throw new IllegalArgumentException("initialBatchSize (" + initialBatchSize + ") must be greater than zero");
+		}
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
@@ -117,8 +137,8 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 				return builder.newInstance();
 			}
 		};
-		this.dataPool = new ArrayObjectPool<E>(256, poolBuilder);
-		this.dataList = new ArrayLinkedList<E>(256);
+		this.dataPool = new ArrayObjectPool<E>(initialBatchSize, poolBuilder);
+		this.dataList = new ArrayLinkedList<E>(initialBatchSize);
 		this.writeChecksum = writeChecksum;
 		if (writeChecksum) {
 			this.bbMemory = new ByteBufferMemory(SEQUENCE_LENGTH + maxObjectSize);
@@ -150,6 +170,20 @@ public class NonWaitingRingProducer<E extends MemorySerializable> implements Rin
 	 */
 	public NonWaitingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum) {
 		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum);
+	}
+
+	/**
+	 * Creates a new non-waiting ring producer.
+	 *
+	 * @param capacity the capacity in number of messages for this ring
+	 * @param maxObjectSize the max size of a single message
+	 * @param klass the class producing new instances of the message
+	 * @param filename the file to be used by its shared memory
+	 * @param writeChecksum true to calculate and write the checksum with each message sent
+	 * @param initialBatchSize the number of message instances to preallocate for producer batches
+	 */
+	public NonWaitingRingProducer(int capacity, int maxObjectSize, Class<E> klass, String filename, boolean writeChecksum, int initialBatchSize) {
+		this(capacity, maxObjectSize, Builder.createBuilder(klass), filename, writeChecksum, initialBatchSize);
 	}
 	
 	/**
