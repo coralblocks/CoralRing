@@ -44,7 +44,6 @@ public class SharedMemory implements Memory {
 	
 	private static Unsafe unsafe;
 	private static boolean UNSAFE_AVAILABLE = false;
-	private static boolean MAP_UNMAP_AVAILABLE = false;
 	private static boolean ADDRESS_AVAILABLE = false;
 	
 	static {
@@ -58,11 +57,15 @@ public class SharedMemory implements Memory {
 		}
     }
 	
-	private static boolean isNewSyncMap = false;
-	private static boolean isJava21 = false;
-	private static boolean isJava19 = false;
-	private static Method mmap;
-	private static Method unmmap;
+	private enum MappingStrategy {
+		MAP0_LEGACY,
+		MAP0_SYNC,
+		PUBLIC_MAP_UNMAP_BUFFER
+	}
+
+	private static final MappingStrategy mappingStrategy;
+	private static final Method mmap;
+	private static final Method unmmap;
 	private static final Field addressField;
 	
 	private static Method getMethod(Class<?> cls, String name, Class<?>... params) throws Exception {
@@ -73,31 +76,27 @@ public class SharedMemory implements Memory {
  
 	static {
 		
+		MappingStrategy strategy = null;
+		Method mapMethod = null;
+		Method unmapMethod = null;
 		Field addrField = null;
 		
 		try {
 			try {
-				mmap = getMethod(FileChannelImpl.class, "map0", int.class, long.class, long.class);
-				isNewSyncMap = false;
+				mapMethod = getMethod(FileChannelImpl.class, "map0", int.class, long.class, long.class);
+				unmapMethod = getMethod(FileChannelImpl.class, "unmap0", long.class, long.class);
+				strategy = MappingStrategy.MAP0_LEGACY;
 			} catch(Exception e) {
 				try {
-					mmap = getMethod(FileChannelImpl.class, "map0", int.class, long.class, long.class, boolean.class);
-					isNewSyncMap = true;
+					mapMethod = getMethod(FileChannelImpl.class, "map0", int.class, long.class, long.class, boolean.class);
+					unmapMethod = getMethod(FileChannelImpl.class, "unmap0", long.class, long.class);
+					strategy = MappingStrategy.MAP0_SYNC;
 				} catch(Exception ee) {
-					mmap = getMethod(FileChannelImpl.class, "map", MapMode.class, long.class, long.class);
-					isJava21 = true;
+					mapMethod = null;
+					unmapMethod = getMethod(FileChannelImpl.class, "unmap", MappedByteBuffer.class);
+					strategy = MappingStrategy.PUBLIC_MAP_UNMAP_BUFFER;
 				}
 			}
-			
-			try {
-				unmmap = getMethod(FileChannelImpl.class, "unmap0", long.class, long.class);
-				isJava19 = true;
-			} catch(Exception e) {
-				unmmap = getMethod(FileChannelImpl.class, "unmap", MappedByteBuffer.class);
-				isJava21 = true;
-			}
-			
-			MAP_UNMAP_AVAILABLE = true;
 			
 			addrField = Buffer.class.getDeclaredField("address");
 			addrField.setAccessible(true);
@@ -108,6 +107,9 @@ public class SharedMemory implements Memory {
 			// throw exception later when we try to allocate memory in the constructor
 		}
 		
+		mappingStrategy = strategy;
+		mmap = mapMethod;
+		unmmap = unmapMethod;
 		addressField = addrField;
 	}
 	
@@ -117,7 +119,7 @@ public class SharedMemory implements Memory {
 	 * @return true if available
 	 */
 	public static boolean isAvailable() {
-		return UNSAFE_AVAILABLE && MAP_UNMAP_AVAILABLE && ADDRESS_AVAILABLE;
+		return UNSAFE_AVAILABLE && mappingStrategy != null && ADDRESS_AVAILABLE;
 	}
 
 	private final long address;
@@ -155,7 +157,7 @@ public class SharedMemory implements Memory {
 			throw new IllegalStateException("sun.misc.Unsafe is not accessible!");
 		}
 		
-		if (!MAP_UNMAP_AVAILABLE) {
+		if (mappingStrategy == null) {
 			throw new IllegalStateException("Cannot get map and unmap methods from FileChannel through reflection!");
 		}
 		
@@ -198,15 +200,21 @@ public class SharedMemory implements Memory {
 						+ ": expected " + size + " bytes but found " + fileSize + " bytes");
 			}
 			FileChannel fileChannel = file.getChannel();
-			if (isJava21) {
-				this.mbb = (MappedByteBuffer) mmap.invoke(fileChannel, MapMode.READ_WRITE, 0L, this.size);
-				this.address = (long) addressField.get(this.mbb);
-			} else if (isNewSyncMap) {
-				this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
-				this.mbb = null;
-			} else {
-				this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
-				this.mbb = null;
+			switch(mappingStrategy) {
+				case MAP0_LEGACY:
+					this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
+					this.mbb = null;
+					break;
+				case MAP0_SYNC:
+					this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
+					this.mbb = null;
+					break;
+				case PUBLIC_MAP_UNMAP_BUFFER:
+					this.mbb = fileChannel.map(MapMode.READ_WRITE, 0L, this.size);
+					this.address = (long) addressField.get(this.mbb);
+					break;
+				default:
+					throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
 			}
 			fileChannel.close();
 			file.close();
@@ -260,12 +268,16 @@ public class SharedMemory implements Memory {
 		RuntimeException firstException = null;
 		
 		try {
-			if (isJava19) { // isJava21 will be true here too
-				unmmap.invoke(null, address, size);
-			} else if (isJava21) {
-				unmmap.invoke(null, this.mbb);
-			} else {
-				unmmap.invoke(null, address, size);
+			switch(mappingStrategy) {
+				case MAP0_LEGACY:
+				case MAP0_SYNC:
+					unmmap.invoke(null, address, size);
+					break;
+				case PUBLIC_MAP_UNMAP_BUFFER:
+					unmmap.invoke(null, this.mbb);
+					break;
+				default:
+					throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
 			}
 		} catch(Exception e) {
 			firstException = new RuntimeException("Cannot release mmap shared memory!", e);
