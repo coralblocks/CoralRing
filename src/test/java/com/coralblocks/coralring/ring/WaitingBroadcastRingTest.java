@@ -31,6 +31,43 @@ import com.coralblocks.coralring.example.ring.Message;
 
 
 public class WaitingBroadcastRingTest {
+
+	@Test
+	public void testDisableOnlyConsumerDoesNotBlockProducer() {
+
+		final String filename = "test-disable-only-broadcast-consumer.mmap";
+		final int capacity = 4;
+		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
+				capacity, Message.getMaxSize(), Message.class, filename, 1);
+
+		try {
+			ringProducer.disableConsumer(0);
+
+			for(int i = 0; i <= capacity; i++) {
+				Message message = ringProducer.nextToDispatch();
+				Assert.assertNotNull(message);
+				message.value = i;
+				ringProducer.flush();
+			}
+		} finally {
+			ringProducer.close(true);
+		}
+	}
+
+	@Test
+	public void testDisableConsumerRejectsInvalidIndex() {
+
+		final String filename = "test-disable-invalid-broadcast-consumer.mmap";
+		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
+				4, Message.getMaxSize(), Message.class, filename, 1);
+
+		try {
+			Assert.assertThrows(IllegalArgumentException.class, () -> ringProducer.disableConsumer(-1));
+			Assert.assertThrows(IllegalArgumentException.class, () -> ringProducer.disableConsumer(1));
+		} finally {
+			ringProducer.close(true);
+		}
+	}
 	
 	@Test
 	public void testNotWrapping() throws InterruptedException {

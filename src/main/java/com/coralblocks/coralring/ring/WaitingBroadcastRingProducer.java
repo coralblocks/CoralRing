@@ -185,17 +185,27 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	}
 	
 	private final long calcMaxSeqBeforeWrapping() {
-		return minFetchSequence() + capacity;
+		long minFetchSequence = minFetchSequence();
+		if (minFetchSequence > Long.MAX_VALUE - capacity) return Long.MAX_VALUE;
+		return minFetchSequence + capacity;
 	}
 	
 	/**
 	 * This method disables a consumer and allows the producer to continue to operate and make progress without having to wait
 	 * for a slow consumer. This is useful for when a consumer has a problem and stops fetching the ring. In that situation
 	 * the ring will get full, causing the producer to wait, unless you disable the consumer.
+	 * <p>
+	 * The consumer must be fully stopped before this method is called. A live consumer can overwrite the disabled marker the
+	 * next time it calls {@link RingConsumer#doneFetching()}.
+	 * </p>
 	 * 
 	 * @param consumerIndex the index of the consumer that you want to disable
+	 * @throws IllegalArgumentException if the consumer index is invalid
 	 */
 	public final void disableConsumer(int consumerIndex) {
+		if (consumerIndex < 0 || consumerIndex >= fetchSequence.length) {
+			throw new IllegalArgumentException("Invalid consumerIndex: " + consumerIndex);
+		}
 		this.fetchSequence[consumerIndex].set(Long.MAX_VALUE);
 	}
 	
