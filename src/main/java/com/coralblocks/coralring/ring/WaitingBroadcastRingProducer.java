@@ -73,7 +73,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	private final MemoryVolatileLong offerSequence;
 	private final MemoryVolatileLong[] fetchSequence;
 	private final Builder<E> builder;
-	private final int maxObjectSize;
+	private final long slotSize;
 	private final ObjectPool<E> dataPool;
 	private final ArrayLinkedList<E> dataList;
 	private final boolean isPowerOfTwo;
@@ -91,9 +91,9 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
-		this.maxObjectSize = maxObjectSize;
+		this.slotSize = MathUtils.alignTo8Bytes(maxObjectSize);
 		int headerSize = CPU_CACHE_LINE + CPU_CACHE_LINE * numberOfConsumers; // 1 producer sequence + 1 sequence for each consumer
-		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize, headerSize);
+		long totalMemorySize = calcTotalMemorySize(capacity, slotSize, headerSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + headerSize;
@@ -172,8 +172,8 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 		return capacity;
 	}
 	
-	private static final long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
-		return headerSize + ((long) capacity) * maxObjectSize;
+	private static final long calcTotalMemorySize(int capacity, long slotSize, int headerSize) {
+		return headerSize + capacity * slotSize;
 	}
 
 	@Override
@@ -249,7 +249,7 @@ public class WaitingBroadcastRingProducer<E extends MemorySerializable> implemen
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * maxObjectSize;
+		return dataAddress + index * slotSize;
 	}
 	
 	private final int calcIndex(long value) {

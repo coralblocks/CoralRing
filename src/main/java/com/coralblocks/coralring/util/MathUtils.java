@@ -43,6 +43,16 @@ public class MathUtils {
 	public static boolean isPowerOfTwo(long l) {
 	    return l > 0 && (l & (l - 1)) == 0;
 	}
+
+	/**
+	 * Rounds a size up to the next 8-byte boundary.
+	 *
+	 * @param size the size to align
+	 * @return the aligned size
+	 */
+	public static long alignTo8Bytes(int size) {
+		return ((long) size + Long.BYTES - 1) & -Long.BYTES;
+	}
 	
 	/**
 	 * Ensure the given number (integer) is a power of two of throw an IllegalArgumentException.

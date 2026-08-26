@@ -57,7 +57,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	private long fetchCount = 0;
 	private final MemoryVolatileLong offerSequence;
 	private final MemoryVolatileLong fetchSequence;
-	private final int maxObjectSize;
+	private final long slotSize;
 	private final Memory memory;
 	private final long headerAddress;
 	private final long dataAddress;
@@ -85,9 +85,9 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 		}
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
-		this.maxObjectSize = maxObjectSize;
+		this.slotSize = MathUtils.alignTo8Bytes(maxObjectSize);
 		int headerSize = CPU_CACHE_LINE + CPU_CACHE_LINE * this.numberOfConsumers; // 1 producer sequence + 1 sequence for each consumer
-		long totalMemorySize = calcTotalMemorySize(this.capacity, maxObjectSize, headerSize);
+		long totalMemorySize = calcTotalMemorySize(this.capacity, slotSize, headerSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + headerSize;
@@ -167,8 +167,8 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 		return memory;
 	}
 	
-	private static final long calcTotalMemorySize(int capacity, int maxObjectSize, int headerSize) {
-		return headerSize + ((long) capacity) * maxObjectSize;
+	private static final long calcTotalMemorySize(int capacity, long slotSize, int headerSize) {
+		return headerSize + capacity * slotSize;
 	}
 	
 	private static final int findCapacityFromFile(String filename, int maxObjectSize, int numberOfConsumers) {
@@ -176,14 +176,14 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
 		long headerSize = CPU_CACHE_LINE + CPU_CACHE_LINE * numberOfConsumers; // 1 producer sequence + 1 sequence for each consumer
-		return (int) ((totalMemorySize - headerSize) / maxObjectSize);
+		return (int) ((totalMemorySize - headerSize) / MathUtils.alignTo8Bytes(maxObjectSize));
 	}
 	
 	private static final int findNumberOfConsumersFromFile(String filename, int maxObjectSize, int capacity) {
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
-		return (int) ((totalMemorySize - (long) capacity * maxObjectSize - CPU_CACHE_LINE) / CPU_CACHE_LINE);
+		return (int) ((totalMemorySize - capacity * MathUtils.alignTo8Bytes(maxObjectSize) - CPU_CACHE_LINE) / CPU_CACHE_LINE);
 	}
 	
 	@Override
@@ -202,7 +202,7 @@ public class WaitingBroadcastRingConsumer<E extends MemorySerializable> implemen
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * maxObjectSize;
+		return dataAddress + index * slotSize;
 	}
 	
 	private final int calcIndex(long value) {

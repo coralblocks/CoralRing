@@ -75,6 +75,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	private long fetchCount = 0;
 	private final MemoryVolatileLong offerSequence;
 	private final int maxObjectSize;
+	private final long slotSize;
 	private final Memory memory;
 	private final long headerAddress;
 	private final long dataAddress;
@@ -101,7 +102,8 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(this.capacity);
 		this.capacityMinusOne = this.capacity - 1;
 		this.maxObjectSize = maxObjectSize;
-		long totalMemorySize = calcTotalMemorySize(this.capacity, maxObjectSize);
+		this.slotSize = CHECKSUM_LENGTH + MathUtils.alignTo8Bytes(maxObjectSize);
+		long totalMemorySize = calcTotalMemorySize(this.capacity, slotSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
@@ -311,19 +313,19 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 		return capacity;
 	}
 	
-	private final long calcTotalMemorySize(int capacity, int maxObjectSize) {
-		return HEADER_SIZE + ((long) capacity) * (CHECKSUM_LENGTH + maxObjectSize);
+	private final long calcTotalMemorySize(int capacity, long slotSize) {
+		return HEADER_SIZE + capacity * slotSize;
 	}
 	
 	private final int findCapacityFromFile(String filename, int maxObjectSize) {
 		File file = new File(filename);
 		if (!file.exists() || file.isDirectory()) throw new RuntimeException("Cannot find file: " + filename);
 		long totalMemorySize = file.length();
-		return calcCapacity(totalMemorySize, maxObjectSize);
+		return calcCapacity(totalMemorySize, CHECKSUM_LENGTH + MathUtils.alignTo8Bytes(maxObjectSize));
 	}
 	
-	private final int calcCapacity(long totalMemorySize, int maxObjectSize) {
-		return (int) ((totalMemorySize - HEADER_SIZE) / (CHECKSUM_LENGTH + maxObjectSize));
+	private final int calcCapacity(long totalMemorySize, long slotSize) {
+		return (int) ((totalMemorySize - HEADER_SIZE) / slotSize);
 	}
 
 	@Override
@@ -339,7 +341,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * (CHECKSUM_LENGTH + maxObjectSize);
+		return dataAddress + index * slotSize;
 	}
 	
 	private final int calcIndex(long value) {

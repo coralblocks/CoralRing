@@ -70,7 +70,7 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 	private final MemoryVolatileLong offerSequence;
 	private final MemoryVolatileLong fetchSequence;
 	private final Builder<E> builder;
-	private final int maxObjectSize;
+	private final long slotSize;
 	private final ObjectPool<E> dataPool;
 	private final ArrayLinkedList<E> dataList;
 	private final boolean isPowerOfTwo;
@@ -87,8 +87,8 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 		this.isPowerOfTwo = MathUtils.isPowerOfTwo(capacity);
 		this.capacity = capacity;
 		this.capacityMinusOne = capacity - 1;
-		this.maxObjectSize = maxObjectSize;
-		long totalMemorySize = calcTotalMemorySize(capacity, maxObjectSize);
+		this.slotSize = MathUtils.alignTo8Bytes(maxObjectSize);
+		long totalMemorySize = calcTotalMemorySize(capacity, slotSize);
 		this.memory = new SharedMemory(totalMemorySize, filename);
 		this.headerAddress = memory.getPointer();
 		this.dataAddress = headerAddress + HEADER_SIZE;
@@ -161,8 +161,8 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 		return capacity;
 	}
 	
-	private static final long calcTotalMemorySize(int capacity, int maxObjectSize) {
-		return HEADER_SIZE + ((long) capacity) * maxObjectSize;
+	private static final long calcTotalMemorySize(int capacity, long slotSize) {
+		return HEADER_SIZE + capacity * slotSize;
 	}
 
 	@Override
@@ -192,7 +192,7 @@ public class WaitingRingProducer<E extends MemorySerializable> implements RingPr
 	}
 	
 	private final long calcDataOffset(long index) {
-		return dataAddress + index * maxObjectSize;
+		return dataAddress + index * slotSize;
 	}
 	
 	private final int calcIndex(long value) {
