@@ -180,20 +180,22 @@ public interface Memory {
 	// ==========
 	
 	/**
-	 * Writes this <code>ByteBuffer</code> to memory
+	 * Writes bytes from this <code>ByteBuffer</code> to memory, starting at its current position.
+	 * The buffer position is advanced by <code>len</code> and its limit is unchanged.
 	 * 
 	 * @param address the memory address to where to write the <code>ByteBuffer</code>
 	 * @param src the <code>ByteBuffer</code>
-	 * @param len the number of bytes to write from the <code>ByteBuffer</code>
+	 * @param len the number of bytes to write, between zero and <code>src.remaining()</code>
 	 */
 	public void putByteBuffer(long address, ByteBuffer src, int len);
 	
 	/**
-	 * Reads data from memory to this <code>ByteBuffer</code>.
+	 * Reads data from memory to this <code>ByteBuffer</code>, starting at its current position.
+	 * The buffer position is advanced by <code>len</code> and its limit is unchanged.
 	 * 
 	 * @param address the memory address from where to read
 	 * @param dst the <code>ByteBuffer</code> receiving the data
-	 * @param len the number of bytes that will be read
+	 * @param len the number of bytes that will be read, between zero and <code>dst.remaining()</code>
 	 */
 	public void getByteBuffer(long address, ByteBuffer dst, int len);
 	

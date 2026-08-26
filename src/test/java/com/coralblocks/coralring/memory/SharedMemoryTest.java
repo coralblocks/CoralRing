@@ -24,6 +24,48 @@ import org.junit.Test;
 public class SharedMemoryTest {
 
 	@Test
+	public void testPutByteBufferUsesAndAdvancesSourcePosition() {
+
+		Memory memory = new SharedMemory(4);
+		try {
+			ByteBuffer source = ByteBuffer.allocateDirect(4);
+			source.put(new byte[] { 10, 20, 30, 40 });
+			source.position(1).limit(3);
+
+			long address = memory.getPointer();
+			memory.putByteBuffer(address, source, 2);
+
+			Assert.assertEquals(3, source.position());
+			Assert.assertEquals(20, memory.getByte(address));
+			Assert.assertEquals(30, memory.getByte(address + 1));
+		} finally {
+			memory.release(true);
+		}
+	}
+
+	@Test
+	public void testPutByteBufferRejectsLengthBeyondRemainingBeforeCopying() {
+
+		Memory memory = new SharedMemory(4);
+		try {
+			ByteBuffer source = ByteBuffer.allocateDirect(8);
+			source.put(new byte[] { 10, 20, 30, 40, 50 });
+			source.position(2).limit(4);
+
+			long address = memory.getPointer();
+			Assert.assertThrows(IllegalArgumentException.class,
+					() -> memory.putByteBuffer(address, source, 3));
+
+			Assert.assertEquals(2, source.position());
+			Assert.assertEquals(0, memory.getByte(address));
+			Assert.assertEquals(0, memory.getByte(address + 1));
+			Assert.assertEquals(0, memory.getByte(address + 2));
+		} finally {
+			memory.release(true);
+		}
+	}
+
+	@Test
 	public void testGetByteBufferRejectsNegativeLength() {
 
 		Memory memory = new SharedMemory(8);

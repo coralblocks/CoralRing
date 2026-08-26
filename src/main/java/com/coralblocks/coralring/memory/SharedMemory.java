@@ -364,9 +364,14 @@ public class SharedMemory implements Memory {
 		if (!src.isDirect()) {
 			throw new RuntimeException("putByteBuffer can only take a direct byte buffer!");
 		}
+		if (len < 0 || len > src.remaining()) {
+			throw new IllegalArgumentException("Invalid length: " + len + " (remaining=" + src.remaining() + ")");
+		}
 		try {
 			long srcAddress = (long) addressField.get(src);
+			srcAddress += src.position();
 			unsafe.copyMemory(srcAddress, address, len);
+			src.position(src.position() + len);
 		} catch(Exception e) {
 			throw new RuntimeException(e);
 		}
