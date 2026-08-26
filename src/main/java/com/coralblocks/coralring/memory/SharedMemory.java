@@ -131,6 +131,7 @@ public class SharedMemory implements Memory {
 	private final long size;
 	private final MappedByteBuffer mbb;
 	private final String filename;
+	private boolean released;
 	
 	/**
 	 * Creates a shared memory with the given size. The filename will be implied.
@@ -196,34 +197,32 @@ public class SharedMemory implements Memory {
 			}
 
 			this.filename = filename;
-			RandomAccessFile file = new RandomAccessFile(filename, "rw");
-			long fileSize = file.length();
-			if (fileSize == 0) {
-				file.setLength(size);
-			} else if (fileSize != size) {
-				file.close();
-				throw new IllegalArgumentException("Shared memory file size mismatch for " + filename
-						+ ": expected " + size + " bytes but found " + fileSize + " bytes");
+			try (RandomAccessFile file = new RandomAccessFile(filename, "rw");
+					FileChannel fileChannel = file.getChannel()) {
+				long fileSize = file.length();
+				if (fileSize == 0) {
+					file.setLength(size);
+				} else if (fileSize != size) {
+					throw new IllegalArgumentException("Shared memory file size mismatch for " + filename
+							+ ": expected " + size + " bytes but found " + fileSize + " bytes");
+				}
+				switch(mappingStrategy) {
+					case MAP0_LEGACY:
+						this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
+						this.mbb = null;
+						break;
+					case MAP0_SYNC:
+						this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
+						this.mbb = null;
+						break;
+					case PUBLIC_MAP_UNMAP_BUFFER:
+						this.mbb = fileChannel.map(MapMode.READ_WRITE, 0L, this.size);
+						this.address = (long) addressField.get(this.mbb);
+						break;
+					default:
+						throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
+				}
 			}
-			FileChannel fileChannel = file.getChannel();
-			switch(mappingStrategy) {
-				case MAP0_LEGACY:
-					this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size);
-					this.mbb = null;
-					break;
-				case MAP0_SYNC:
-					this.address = (long) mmap.invoke(fileChannel, 1, 0L, this.size, false);
-					this.mbb = null;
-					break;
-				case PUBLIC_MAP_UNMAP_BUFFER:
-					this.mbb = fileChannel.map(MapMode.READ_WRITE, 0L, this.size);
-					this.address = (long) addressField.get(this.mbb);
-					break;
-				default:
-					throw new IllegalStateException("Unsupported mapping strategy: " + mappingStrategy);
-			}
-			fileChannel.close();
-			file.close();
 		} catch(IllegalArgumentException e) {
 			throw e;
 		} catch(Exception e) {
@@ -269,10 +268,11 @@ public class SharedMemory implements Memory {
 	}
 
 	@Override
-	public void release(boolean deleteFileIfUsed) {
-		
+	public synchronized void release(boolean deleteFileIfUsed) {
+		if (released) return;
+		released = true;
+
 		RuntimeException firstException = null;
-		
 		try {
 			switch(mappingStrategy) {
 				case MAP0_LEGACY:
@@ -287,22 +287,29 @@ public class SharedMemory implements Memory {
 			}
 		} catch(Exception e) {
 			firstException = new RuntimeException("Cannot release mmap shared memory!", e);
-			throw firstException;
-		} finally {
-			if (deleteFileIfUsed) deleteFile(firstException);
 		}
+
+		if (deleteFileIfUsed) {
+			try {
+				deleteFile();
+			} catch (RuntimeException e) {
+				if (firstException == null) {
+					firstException = e;
+				} else {
+					firstException.addSuppressed(e);
+				}
+			}
+		}
+
+		if (firstException != null) throw firstException;
 	}
 	
-	private void deleteFile(Exception firstException) {
+	private void deleteFile() {
 		Path path = Paths.get(filename);
         try {
             Files.deleteIfExists(path); // if someone else deleted it
         } catch (IOException e) {
-        	RuntimeException exception = new RuntimeException("Failed to delete the file: " + filename, e);
-        	if (firstException != null) {
-        		exception.addSuppressed(firstException);
-        	}
-            throw exception;
+			throw new RuntimeException("Failed to delete the file: " + filename, e);
         }
 	}
 

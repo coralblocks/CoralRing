@@ -24,6 +24,28 @@ import org.junit.Test;
 public class SharedMemoryTest {
 
 	@Test
+	public void testReleaseIsIdempotent() {
+
+		final String retainedFilename = "test-shared-memory-idempotent-retain.mmap";
+		Memory sharedMemory = new SharedMemory(64, retainedFilename);
+		sharedMemory.release(false);
+		sharedMemory.release(true);
+		java.io.File retainedFile = new java.io.File(retainedFilename);
+		Assert.assertTrue(retainedFile.exists());
+		Assert.assertTrue(retainedFile.delete());
+
+		final String deletedFilename = "test-shared-memory-idempotent-delete.mmap";
+		sharedMemory = new SharedMemory(64, deletedFilename);
+		sharedMemory.release(true);
+		sharedMemory.release(true);
+		Assert.assertFalse(new java.io.File(deletedFilename).exists());
+
+		Memory byteBufferMemory = new ByteBufferMemory(64);
+		byteBufferMemory.release(false);
+		byteBufferMemory.release(false);
+	}
+
+	@Test
 	public void testMismatchedAttachDoesNotResizeExistingFile() {
 
 		final String filename = "test-shared-memory-size-mismatch.mmap";

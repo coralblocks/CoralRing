@@ -40,6 +40,8 @@ public interface Memory {
 	
 	/**
 	 * Release this memory and all its associated resources. If this memory has a file you can choose to delete the file or not.
+	 * This method is idempotent. After it is called, no other method on this memory may be used; access to released native memory
+	 * is undefined and can terminate the JVM.
 	 * 
 	 * @param deleteFile true to delete the associated file if it exists, such in the case of a shared memory through a memory-mapped file
 	 */

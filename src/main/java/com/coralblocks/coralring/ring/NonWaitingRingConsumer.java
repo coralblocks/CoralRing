@@ -441,6 +441,7 @@ public class NonWaitingRingConsumer<E extends MemorySerializable> implements Rin
 	
 	@Override
 	public final void close(boolean deleteFile) {
+		if (bbMemory != null) bbMemory.release(false);
 		memory.release(deleteFile);
 	}
 }
