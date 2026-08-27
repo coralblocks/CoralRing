@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -159,6 +160,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 		
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
+		final AtomicLong lastFetchedSequence = new AtomicLong();
 		
 		Thread producer = new Thread(new Runnable() {
 
@@ -184,9 +186,9 @@ public class NonWaitingRingTest extends MmapTestBase {
 					}
 					ringProducer.flush(); // <=========
 					remaining -= batchToSend;
-					
-					// sleep so that the consumer NEVER falls behind...
-					try { Thread.sleep(1); } catch(InterruptedException e) { throw new RuntimeException(e); }
+
+					long lastOfferedSequence = ringProducer.getLastOfferedSequence();
+					while(lastFetchedSequence.get() < lastOfferedSequence) Thread.onSpinWait();
 				}
 				
 				ringProducer.close(false); // don't delete file, consumer might still be reading it
@@ -213,6 +215,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 							if (m.last) isRunning = false; // I'm done!
 						}
 						ringConsumer.doneFetching(); // <=========
+						lastFetchedSequence.set(ringConsumer.getLastFetchedSequence());
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while waiting (default and fastest wait strategy)

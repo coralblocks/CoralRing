@@ -290,9 +290,6 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 					}
 					ringProducer.flush(); // <=========
 					remaining -= batchToSend;
-					
-					// sleep so that the consumers NEVER fall behind...
-					try { Thread.sleep(5); } catch(InterruptedException e) { throw new RuntimeException(e); }
 				}
 			}
 			

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicLongArray;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -156,6 +157,8 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 		final int maxBatchSize = 50;
 		
 		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(Message.getMaxSize(), Message.class, filename);
+		final int numberOfConsumers = 3;
+		final AtomicLongArray lastFetchedSequences = new AtomicLongArray(numberOfConsumers);
 		
 		Thread producer = new Thread(new Runnable() {
 
@@ -179,20 +182,23 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 					}
 					ringProducer.flush(); // <=========
 					remaining -= batchToSend;
-					
-					// sleep so that the consumers NEVER fall behind...
-					try { Thread.sleep(5); } catch(InterruptedException e) { throw new RuntimeException(e); }
+
+					long lastOfferedSequence = ringProducer.getLastOfferedSequence();
+					for(int i = 0; i < lastFetchedSequences.length(); i++) {
+						while(lastFetchedSequences.get(i) < lastOfferedSequence) Thread.onSpinWait();
+					}
 				}
 			}
 			
 		}, "RingProducer");
 
-		Thread[] consumers = new Thread[3];
+		Thread[] consumers = new Thread[numberOfConsumers];
 		
 		final List<List<Long>> messagesReceived  = new ArrayList<List<Long>>(consumers.length);
 		final List<List<Long>> batchesReceived = new ArrayList<List<Long>>(consumers.length);
 		
 		for(int i = 0; i < consumers.length; i++) {
+			final int consumerIndex = i;
 			
 			final List<Long> mr = new ArrayList<Long>(messagesToSend);
 			final List<Long> br = new ArrayList<Long>(messagesToSend);
@@ -219,6 +225,7 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 								if (m.last) isRunning = false; // I'm done!
 							}
 							ringConsumer.doneFetching(); // <=========
+							lastFetchedSequences.set(consumerIndex, ringConsumer.getLastFetchedSequence());
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
@@ -228,7 +235,7 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 					ringConsumer.close(false);
 				}
 				
-			}, "RingConsumer-" + i);
+			}, "RingConsumer-" + consumerIndex);
 		}
 		
 		for(Thread consumer : consumers) consumer.start();
