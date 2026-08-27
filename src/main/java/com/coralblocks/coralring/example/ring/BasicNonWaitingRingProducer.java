@@ -17,6 +17,7 @@ package com.coralblocks.coralring.example.ring;
 
 import java.util.Random;
 
+import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.NonWaitingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
@@ -58,7 +59,7 @@ public class BasicNonWaitingRingProducer {
 			}
 			ringProducer.flush(); // <=========
 			remaining -= batchToSend;
-			if (sleepTime > 0) sleepFor(sleepTime);
+			if (sleepTime > 0) BusySpinUtils.waitFor(sleepTime);
 		}
 		
 		System.out.println("Producer DONE!");
@@ -67,9 +68,4 @@ public class BasicNonWaitingRingProducer {
 		
 		System.out.println("Producer busy-spin count: " + busySpinCount);
 	}
-	
-    private static final void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }

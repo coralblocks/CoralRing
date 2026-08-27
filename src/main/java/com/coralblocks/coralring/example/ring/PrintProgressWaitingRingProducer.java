@@ -17,6 +17,7 @@ package com.coralblocks.coralring.example.ring;
 
 import java.util.Random;
 
+import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.WaitingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
 
@@ -54,15 +55,10 @@ public class PrintProgressWaitingRingProducer {
 					System.out.print(",");
 				}
 				System.out.print(m.value);
-				sleepFor(sleepTime);
+				BusySpinUtils.waitFor(sleepTime);
 			}
 			ringProducer.flush(); // <=========
-			sleepFor(sleepTime);
+			BusySpinUtils.waitFor(sleepTime);
 		}
 	}
-	
-    private static final void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }

@@ -15,6 +15,7 @@
  */
 package com.coralblocks.coralring.example.ring;
 
+import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.WaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
@@ -46,18 +47,13 @@ public class PrintProgressWaitingRingConsumer {
 						System.out.print(",");
 					}
 					System.out.print(m.value);
-					sleepFor(sleepTime);
+					BusySpinUtils.waitFor(sleepTime);
 				}
 				ringConsumer.doneFetching(); // <=========
-				sleepFor(sleepTime);
+				BusySpinUtils.waitFor(sleepTime);
 			} else {
 				// busy spin while waiting (default and fastest wait strategy)
 			}
 		}
 	}
-	
-    private static final void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }

@@ -18,6 +18,7 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.NonWaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
 
@@ -66,7 +67,7 @@ public class BasicNonWaitingRingConsumer {
 				}
 				ringConsumer.doneFetching(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
-				if (sleepTime > 0) sleepFor(sleepTime);
+				if (sleepTime > 0) BusySpinUtils.waitFor(sleepTime);
 			} else {
 				// busy spin while waiting (default and fastest wait strategy)
 				busySpinCount++; // save the number of busy-spins, just for extra info later
@@ -106,9 +107,4 @@ public class BasicNonWaitingRingConsumer {
 	    }
 	    return true;
 	}
-	
-    private static final void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }

@@ -15,6 +15,7 @@
  */
 package com.coralblocks.coralring.example.memory;
 
+import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 
@@ -44,7 +45,7 @@ public class SharedMemoryProducer {
 				if (offset > 4) System.out.print(",");
 				System.out.print(valueToSend);
 				memory.putIntVolatile(address, ++currIndex); // write to the header
-				sleepFor(1_000_000_000 / 4);
+				BusySpinUtils.waitFor(1_000_000_000 / 4);
 		}
 		
 		// now send the very last message to indicate we are done
@@ -55,9 +56,4 @@ public class SharedMemoryProducer {
 		
 		System.out.println("\nProducer DONE!");
 	}
-	
-    private static final void sleepFor(long nanos) {
-        long time = System.nanoTime();
-        while((System.nanoTime() - time) < nanos);
-    }
 }
