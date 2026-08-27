@@ -17,9 +17,9 @@ package com.coralblocks.coralring.example.ring;
 
 import java.util.Random;
 
-import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.NonWaitingRingProducer;
 import com.coralblocks.coralring.ring.RingProducer;
+import com.coralblocks.coralring.util.BusySpinUtils;
 
 public class BasicNonWaitingRingProducer {
 	

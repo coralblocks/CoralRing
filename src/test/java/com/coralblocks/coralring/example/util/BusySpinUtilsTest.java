@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.util.BusySpinUtils;
+
 public class BusySpinUtilsTest {
 
 	@Test

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.coralblocks.coralring.example.util;
+package com.coralblocks.coralring.util;
 
 public final class BusySpinUtils {
 

@@ -15,8 +15,8 @@
  */
 package com.coralblocks.coralring.example.ring;
 
-import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.WaitingRingConsumer;
+import com.coralblocks.coralring.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.RingConsumer;
 
 public class PrintProgressWaitingRingConsumer {

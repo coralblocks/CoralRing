@@ -18,9 +18,9 @@ package com.coralblocks.coralring.example.ring;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.ring.NonWaitingRingConsumer;
 import com.coralblocks.coralring.ring.RingConsumer;
+import com.coralblocks.coralring.util.BusySpinUtils;
 
 public class BasicNonWaitingRingConsumer {
 	

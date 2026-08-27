@@ -15,9 +15,9 @@
  */
 package com.coralblocks.coralring.example.memory;
 
-import com.coralblocks.coralring.example.util.BusySpinUtils;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
+import com.coralblocks.coralring.util.BusySpinUtils;
 
 public class SharedMemoryProducer {
 	
