@@ -32,6 +32,7 @@ public class BasicWaitingRingConsumer {
 		final int sleepTime = args.length > 1 ? Integer.parseInt(args[1]) : 1_000_000 * 5; // 5 millis
 
 		final RingConsumer<Message> ringConsumer = new WaitingRingConsumer<Message>(Message.getMaxSize(), Message.class, FILENAME);
+		final Thread thread = Thread.currentThread();
 		final List<Long> messagesReceived  = new ArrayList<Long>();
 		final List<Long> batchesReceived = new ArrayList<Long>();
 		long busySpinCount = 0;
@@ -40,27 +41,28 @@ public class BasicWaitingRingConsumer {
 								+ " with sleepTime of " + sleepTime + " nanoseconds (lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + ")"
 								+ "...\n");
 		
-		boolean isRunning = true;
-		while(isRunning) {
+		boolean completed = false;
+		while(!completed && !thread.isInterrupted()) {
 			long avail = ringConsumer.availableToFetch(); // <=========
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
 					Message m = ringConsumer.fetch(); // <=========
 					messagesReceived.add(m.value); // save just the long value from this message
-					if (m.last) isRunning = false; // I'm done!
+					if (m.last) completed = true; // I'm done!
 				}
 				ringConsumer.doneFetching(); // <=========
 				batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 				if (sleepTime > 0) BusySpinUtils.waitFor(sleepTime);
 			} else {
 				// busy spin while waiting (default and fastest wait strategy)
+				Thread.onSpinWait();
 				busySpinCount++; // save the number of busy-spins, just for extra info later
 			}
 		}
 		
 		System.out.println("Consumer DONE!");
 		
-		ringConsumer.close(true); // delete file
+		ringConsumer.close(completed); // delete only after normal completion
 		
 		// Did we receive all messages?
 		if (messagesReceived.size() == expectedMessagesToReceive) System.out.println("SUCCESS: All messages received! => " + expectedMessagesToReceive);

@@ -31,6 +31,7 @@ public class SharedMemoryProducer {
 		
 		Memory memory = new SharedMemory(size, filename);
 		final long address = memory.getPointer();
+		final Thread thread = Thread.currentThread();
 		
 		int currIndex = -1;
 		int valueToSend = -1;
@@ -39,7 +40,7 @@ public class SharedMemoryProducer {
 		memory.putIntVolatile(address, currIndex);
 		
 		for(offset = 4; // skip the header 
-			offset < size - 4; // don't send the last message 
+			offset < size - 4 && !thread.isInterrupted(); // don't send the last message
 			offset += 4) { // sending integers (4 bytes)
 				memory.putInt(address + offset, ++valueToSend);
 				if (offset > 4) System.out.print(",");
@@ -48,9 +49,11 @@ public class SharedMemoryProducer {
 				BusySpinUtils.waitFor(1_000_000_000 / 4);
 		}
 		
-		// now send the very last message to indicate we are done
-		memory.putInt(address + offset, -1); // -1 to signal we are done!
-		memory.putIntVolatile(address, ++currIndex);
+		if (!thread.isInterrupted()) {
+			// now send the very last message to indicate we are done
+			memory.putInt(address + offset, -1); // -1 to signal we are done!
+			memory.putIntVolatile(address, ++currIndex);
+		}
 		
 		memory.release(false); // don't delete the file, consumer may still be reading it
 		

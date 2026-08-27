@@ -26,12 +26,14 @@ public class SharedMemoryConsumer {
 		
 		Memory memory = new SharedMemory(filename); // size will be taken from file
 		final long address = memory.getPointer();
+		final Thread thread = Thread.currentThread();
 		
 		final int headerOffset = 4;
 		int producerIndex = -1;
 		int lastIndexRead = -1;
+		boolean completed = false;
 		
-		OUTER: while(true) { // busy spin
+		OUTER: while(!thread.isInterrupted()) { // busy spin
 
 			producerIndex = memory.getIntVolatile(address);
 			
@@ -45,7 +47,10 @@ public class SharedMemoryConsumer {
 					
 					int value = memory.getInt(address + offset);
 
-					if (value == -1) break OUTER;
+					if (value == -1) {
+						completed = true;
+						break OUTER;
+					}
 
 					if (value != 0) System.out.print(",");
 					
@@ -53,10 +58,12 @@ public class SharedMemoryConsumer {
 				}
 				
 				lastIndexRead = producerIndex;
+			} else {
+				Thread.onSpinWait();
 			}
 		}
 		
-		memory.release(true); // also delete the file when done (producer will be done too)
+		memory.release(completed); // delete only after normal completion
 		
 		System.out.println("\nConsumer DONE!");
 	}

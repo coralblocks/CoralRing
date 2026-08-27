@@ -104,6 +104,7 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					
@@ -185,7 +186,9 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 
 					long lastOfferedSequence = ringProducer.getLastOfferedSequence();
 					for(int i = 0; i < lastFetchedSequences.length(); i++) {
-						while(lastFetchedSequences.get(i) < lastOfferedSequence) Thread.onSpinWait();
+						while(lastFetchedSequences.get(i) < lastOfferedSequence) {
+							Thread.onSpinWait();
+						}
 					}
 				}
 			}
@@ -229,6 +232,7 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					
@@ -473,6 +477,7 @@ public class NonWaitingMulticastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					

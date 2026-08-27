@@ -30,6 +30,7 @@ public class PrintProgressWaitingRingProducer {
 		final int sleepTime = args.length > 0 ? Integer.parseInt(args[0]) : 1_000_000_000; // 1s
 		
 		final RingProducer<Message> ringProducer = new WaitingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
+		final Thread thread = Thread.currentThread();
 		
 		long idToSend = ringProducer.getLastOfferedSequence() + 1;
 		
@@ -39,7 +40,7 @@ public class PrintProgressWaitingRingProducer {
 		
 		boolean first = true;
 		
-		while(true) {
+		OUTER: while(!thread.isInterrupted()) {
 			
 			int batchToSend = rand.nextInt(4);
 			
@@ -47,6 +48,8 @@ public class PrintProgressWaitingRingProducer {
 				Message m;
 				while((m = ringProducer.nextToDispatch()) == null) { // <=========
 					// busy spin while waiting (default and fastest wait strategy)
+					if (thread.isInterrupted()) break OUTER;
+					Thread.onSpinWait();
 				}
 				m.value = idToSend++; // sending a unique value so the messages sent are unique
 				if (first) {
@@ -60,5 +63,7 @@ public class PrintProgressWaitingRingProducer {
 			ringProducer.flush(); // <=========
 			BusySpinUtils.waitFor(sleepTime);
 		}
+
+		ringProducer.close(false);
 	}
 }

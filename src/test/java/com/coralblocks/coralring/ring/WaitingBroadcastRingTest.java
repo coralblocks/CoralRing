@@ -165,6 +165,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 						Message m;
 						while((m = ringProducer.nextToDispatch()) == null) { // <=========
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -213,6 +214,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					
@@ -284,6 +286,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 						Message m;
 						while((m = ringProducer.nextToDispatch()) == null) { // <=========
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -332,6 +335,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					
@@ -403,6 +407,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 						Message m;
 						while((m = ringProducer.nextToDispatch()) == null) { // <=========
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 						m.value = idToSend++; // sending a unique value so the messages sent are unique
 						m.last = m.value == messagesToSend; // is it the last message I'll be sending?
@@ -451,6 +456,7 @@ public class WaitingBroadcastRingTest extends MmapTestBase {
 							br.add(avail); // save the batch sizes received, just so we can double check
 						} else {
 							// busy spin while waiting (default and fastest wait strategy)
+							Thread.onSpinWait();
 						}
 					}	
 					

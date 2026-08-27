@@ -119,6 +119,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while waiting (default and fastest wait strategy)
+						Thread.onSpinWait();
 					}
 				}	
 				
@@ -189,7 +190,9 @@ public class NonWaitingRingTest extends MmapTestBase {
 					remaining -= batchToSend;
 
 					long lastOfferedSequence = ringProducer.getLastOfferedSequence();
-					while(lastFetchedSequence.get() < lastOfferedSequence) Thread.onSpinWait();
+					while(lastFetchedSequence.get() < lastOfferedSequence) {
+						Thread.onSpinWait();
+					}
 				}
 				
 				ringProducer.close(false); // don't delete file, consumer might still be reading it
@@ -220,6 +223,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while waiting (default and fastest wait strategy)
+						Thread.onSpinWait();
 					}
 				}	
 				
@@ -438,6 +442,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 						batchesReceived.add(avail); // save the batch sizes received, just so we can double check
 					} else {
 						// busy spin while waiting (default and fastest wait strategy)
+						Thread.onSpinWait();
 					}
 				}	
 				

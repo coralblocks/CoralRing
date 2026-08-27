@@ -31,12 +31,14 @@ public class PrintProgressWaitingRingConsumer {
 		int capacity = implyFromFile ? -1 : 8;
 
 		final RingConsumer<Message> ringConsumer = new WaitingRingConsumer<Message>(capacity, Message.getMaxSize(), Message.class, filename);
+
+		final Thread thread = Thread.currentThread();
 		
 		System.out.println("Consumer started! lastFetchedSeq=" + ringConsumer.getLastFetchedSequence() + "\n");
 		
 		boolean first = true;
 		
-		while(true) {
+		while(!thread.isInterrupted()) {
 			long avail = ringConsumer.availableToFetch(); // <=========
 			if (avail > 0) {
 				for(long i = 0; i < avail; i++) {
@@ -53,7 +55,10 @@ public class PrintProgressWaitingRingConsumer {
 				BusySpinUtils.waitFor(sleepTime);
 			} else {
 				// busy spin while waiting (default and fastest wait strategy)
+				Thread.onSpinWait();
 			}
 		}
+
+		ringConsumer.close(false); // interruption is not normal completion
 	}
 }

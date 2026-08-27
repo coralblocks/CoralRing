@@ -28,19 +28,21 @@ public class MinimalWaitingBroadcastRingConsumer {
 		final int messagesToSend = 10;
 		final int consumerIndex = Integer.parseInt(args[0]); // you must specify the index of the consumer
 		
-		final RingConsumer<MutableLong> ringConsumer = new WaitingBroadcastRingConsumer<>(MutableLong.getMaxSize(),
-																						  MutableLong.class, 
-																						  FILENAME, 
-																						  consumerIndex, 
-																						  NUMBER_OF_CONSUMERS); // default size is 1024
+		final RingConsumer<MutableLong> ringConsumer = new WaitingBroadcastRingConsumer<>(
+				MutableLong.getMaxSize(), MutableLong.class, FILENAME, consumerIndex, NUMBER_OF_CONSUMERS); // default size is 1024
 		
-		boolean isRunning = true;
+		final Thread thread = Thread.currentThread();
+
+		boolean completed = false;
 		
-		while(isRunning) {
+		while(!completed && !thread.isInterrupted()) {
 			
 			long avail = ringConsumer.availableToFetch(); // read available batches as fast as possible
 			
-			if (avail == 0) continue; // busy spin
+			if (avail == 0) {
+				Thread.onSpinWait();
+				continue; // busy spin
+			}
 			
 			for(long i = 0; i < avail; i++) {
 				
@@ -48,13 +50,13 @@ public class MinimalWaitingBroadcastRingConsumer {
 				
 				System.out.print(ml.get());
 				
-				if (ml.get() == messagesToSend - 1) isRunning = false; // done receiving all messages
+				if (ml.get() == messagesToSend - 1) completed = true; // done receiving all messages
 			}
 			
 			ringConsumer.doneFetching(); // don't forget to notify producer
 		}
 		
-		ringConsumer.close(true);
+		ringConsumer.close(completed);
 		
 		System.out.println();
 		

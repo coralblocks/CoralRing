@@ -33,6 +33,7 @@ public class BasicWaitingBroadcastRingProducer {
 		final int numberOfConsumers = args.length > 3 ? Integer.parseInt(args[3]) : 3;
 		
 		final RingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(Message.getMaxSize(), Message.class, FILENAME, numberOfConsumers);
+		final Thread thread = Thread.currentThread();
 		
 		int idToSend = 1; // each message from this producer will contain a unique value (id)
 		long busySpinCount = 0;
@@ -45,12 +46,14 @@ public class BasicWaitingBroadcastRingProducer {
 		Random rand = new Random();
 		
 		int remaining = messagesToSend;
-		while(remaining > 0) {
+		OUTER: while(remaining > 0 && !thread.isInterrupted()) {
 			int batchToSend = Math.min(rand.nextInt(maxBatchSize) + 1, remaining);
 			for(int i = 0; i < batchToSend; i++) {
 				Message m;
 				while((m = ringProducer.nextToDispatch()) == null) { // <=========
 					// busy spin while waiting (default and fastest wait strategy)
+					if (thread.isInterrupted()) break OUTER;
+					Thread.onSpinWait();
 					busySpinCount++;
 				}
 				m.value = idToSend++; // sending a unique value so the messages sent are unique

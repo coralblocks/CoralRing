@@ -26,17 +26,21 @@ public class MinimalNonWaitingRingConsumer {
 		
 		final int messagesToSend = 10;
 		
-		final RingConsumer<MutableLong> ringConsumer = new NonWaitingRingConsumer<>(MutableLong.getMaxSize(), 
-																					MutableLong.class, 
-																					FILENAME); // default size is 1024
+		final RingConsumer<MutableLong> ringConsumer = new NonWaitingRingConsumer<>(
+				MutableLong.getMaxSize(), MutableLong.class, FILENAME); // default size is 1024
 		
-		boolean isRunning = true;
+		final Thread thread = Thread.currentThread();
+
+		boolean completed = false;
 		
-		while(isRunning) {
+		while(!completed && !thread.isInterrupted()) {
 			
 			long avail = ringConsumer.availableToFetch(); // read available batches as fast as possible
 			
-			if (avail == 0) continue; // busy spin
+			if (avail == 0) {
+				Thread.onSpinWait();
+				continue; // busy spin
+			}
 			
 			if (avail == -1) throw new RuntimeException("The consumer fell behind! (ring wrapped)");
 			
@@ -48,13 +52,13 @@ public class MinimalNonWaitingRingConsumer {
 				
 				System.out.print(ml.get());
 				
-				if (ml.get() == messagesToSend - 1) isRunning = false; // done receiving all messages
+				if (ml.get() == messagesToSend - 1) completed = true; // done receiving all messages
 			}
 			
 			ringConsumer.doneFetching(); // don't forget to notify producer
 		}
 		
-		ringConsumer.close(true);
+		ringConsumer.close(completed);
 		
 		System.out.println();
 		
