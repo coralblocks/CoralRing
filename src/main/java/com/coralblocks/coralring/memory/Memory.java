@@ -66,7 +66,7 @@ public interface Memory {
 	public void putLong(long address, long value);
 	
 	/**
-	 * Reads am int from memory
+	 * Reads an int from memory
 	 * 
 	 * @param address the memory address from where to read the int
 	 * @return the int

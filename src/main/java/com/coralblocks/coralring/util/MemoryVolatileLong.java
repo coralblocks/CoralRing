@@ -35,6 +35,7 @@ public class MemoryVolatileLong {
 	public MemoryVolatileLong(long address, Memory memory, Long value) {
 		this.address = address;
 		this.memory = memory;
+		// Null attaches to an existing memory location without overwriting its current value.
 		if (value != null) set(value.longValue());
 	}
 	

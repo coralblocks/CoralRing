@@ -88,17 +88,17 @@ public interface RingConsumer<E extends MemorySerializable> {
 	 * Process or copy its contents immediately instead of retaining the reference.</p>
 	 * 
 	 * @param remove true to advance the consumer after reading; false to inspect the next message without advancing
-	 * @return the reused next-message instance, or null when the implementation rejects the message, such as after a checksum failure
+	 * @return the reused next-message instance, or null when a checksum-enabled consumer rejects a corrupt message
 	 */
 	public E fetch(boolean remove);
 	
 	/**
-	 * Fetch the next available message. This method simply calls {@link #fetch(boolean)} with <code>true</code> and does not check availability.
+	 * Fetch the next available message. This method calls {@link #fetch(boolean)} with <code>true</code> and does not check availability.
 	 *
 	 * <p><strong>IMPORTANT:</strong> The returned mutable instance is owned by this consumer and is overwritten by the next fetch.
 	 * Process or copy its contents immediately instead of retaining the reference.</p>
 	 * 
-	 * @return the reused next-message instance, or null when the implementation rejects the message, such as after a checksum failure
+	 * @return the reused next-message instance, or null when a checksum-enabled consumer rejects a corrupt message
 	 */
 	public E fetch();
 	

@@ -69,7 +69,7 @@ public class WaitingRingConsumer<E extends MemorySerializable> implements RingCo
 	/**
 	 * Creates a new ring consumer
 	 * 
-	 * @param capacity the capacity in number of messages for this ring
+	 * @param capacity the capacity in number of messages for this ring, or -1 to derive it from the existing file
 	 * @param maxObjectSize the max size of a single message
 	 * @param builder the builder producing new instances of the message
 	 * @param filename the file to be used by its shared memory
@@ -108,7 +108,7 @@ public class WaitingRingConsumer<E extends MemorySerializable> implements RingCo
 	/**
 	 * Creates a new ring consumer
 	 * 
-	 * @param capacity the capacity in number of messages for this ring
+	 * @param capacity the capacity in number of messages for this ring, or -1 to derive it from the existing file
 	 * @param maxObjectSize the max size of a single message
 	 * @param klass the class producing new instances of the message
 	 * @param filename the file to be used by its shared memory

@@ -63,9 +63,10 @@ public interface RingProducer<E extends MemorySerializable> {
 	public void setLastOfferedSequence(long lastOfferedSequence);
 	
 	/**
-	 * Gets the next available message that can be offered (i.e. dispatched) by the ring producer.
+	 * Gets the next available message that can be offered (i.e. dispatched) by the ring producer. A waiting producer returns
+	 * null while the ring is full; a non-waiting producer always returns a message.
 	 * 
-	 * @return the next available message that can be offered (i.e. dispatched)
+	 * @return the next available message that can be offered, or null when a waiting ring is full
 	 */
 	public E nextToDispatch();
 	
