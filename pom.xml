@@ -135,7 +135,6 @@
           <remoteTagging>true</remoteTagging>
           <scmCommentPrefix>[maven-release-plugin]</scmCommentPrefix>
           <preparationGoals>clean verify</preparationGoals>
-          <arguments>-DskipTests</arguments>
         </configuration>
       </plugin>
 
