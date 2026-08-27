@@ -29,6 +29,7 @@ import com.coralblocks.coralring.example.ring.Message;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
 import com.coralblocks.coralring.util.Builder;
+import com.coralblocks.coralring.util.MathUtils;
 import com.coralblocks.coralring.util.PayloadByteBufferMessage;
 
 
@@ -468,7 +469,7 @@ public class NonWaitingRingTest extends MmapTestBase {
 	}
 
 	@Test
-	public void testChecksumIncludesLastMessageByte() {
+	public void testChecksumRejectsCorruptionInEveryMessageByte() {
 
 		final String filename = mmapFile("test-nonwaiting-ring-checksum-corruption.mmap");
 
@@ -476,22 +477,38 @@ public class NonWaitingRingTest extends MmapTestBase {
 		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, true);
 
 		try {
-			Message message = ringProducer.nextToDispatch();
-			message.value = 1;
-			message.last = false;
-			ringProducer.flush();
+			long slotSize = NonWaitingRingProducer.CHECKSUM_LENGTH + MathUtils.alignTo8Bytes(Message.getMaxSize());
 
-			long lastMessageByteAddress = ringProducer.getMemory().getPointer()
-					+ NonWaitingRingProducer.HEADER_SIZE
-					+ NonWaitingRingProducer.CHECKSUM_LENGTH
-					+ Message.getMaxSize() - 1;
-			ringProducer.getMemory().putByte(lastMessageByteAddress, (byte) 'Y');
+			for (int byteIndex = 0; byteIndex < Message.getMaxSize(); byteIndex++) {
+				long expectedValue = 100 + byteIndex;
+				boolean expectedLast = byteIndex % 2 == 0;
 
-			Assert.assertNull(ringConsumer.fetch(false));
-			Assert.assertNull(ringConsumer.fetch());
+				Message message = ringProducer.nextToDispatch();
+				message.value = expectedValue;
+				message.last = expectedLast;
+				ringProducer.flush();
+
+				long messageByteAddress = ringProducer.getMemory().getPointer()
+						+ NonWaitingRingProducer.HEADER_SIZE
+						+ byteIndex * slotSize
+						+ NonWaitingRingProducer.CHECKSUM_LENGTH
+						+ byteIndex;
+				byte original = ringProducer.getMemory().getByte(messageByteAddress);
+				ringProducer.getMemory().putByte(messageByteAddress, (byte) (original ^ 0xFF));
+
+				Assert.assertNull(ringConsumer.fetch(false));
+				Assert.assertNull(ringConsumer.fetch());
+				Assert.assertEquals(byteIndex, ringConsumer.getLastFetchedSequence());
+
+				ringProducer.getMemory().putByte(messageByteAddress, original);
+				Message received = ringConsumer.fetch();
+				Assert.assertNotNull(received);
+				Assert.assertEquals(expectedValue, received.value);
+				Assert.assertEquals(expectedLast, received.last);
+			}
 		} finally {
-			ringProducer.close(false);
-			ringConsumer.close(true);
+			ringConsumer.close(false);
+			ringProducer.close(true);
 		}
 	}
 
