@@ -8,8 +8,8 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jdk.add.opens />
-    <jdk.add.exports />
+    <jdk.add.opens>--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED</jdk.add.opens>
+    <jdk.add.exports>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</jdk.add.exports>
   </properties>
 
   <scm>
@@ -178,34 +178,6 @@
   </distributionManagement>
 
   <profiles>
-    <profile>
-      <id>java11plus</id>
-      <activation>
-         <jdk>[11,)</jdk>
-          <!-- property>
-              <name>java.specification.version</name>
-              <regex>(1[1-9]|[2-9][0-9])(\..*)?</regex>
-          </property -->
-      </activation>
-      <properties>
-          <jdk.add.opens>--add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED</jdk.add.opens>
-          <jdk.add.exports>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</jdk.add.exports>
-      </properties>
-  </profile>
-
-  <!-- Profile for Java 8 -->
-  <profile>
-      <id>java8</id>
-      <activation>
-        <jdk>1.8</jdk>
-          <!-- property>
-              <name>java.specification.version</name>
-              <value>1.8</value>
-          </property -->
-      </activation>
-      <!-- No additional JVM arguments needed -->
-  </profile>
-
   <profile>
     <id>release</id>
     <build>
