@@ -22,17 +22,18 @@ import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.memory.ByteBufferMemory;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.SharedMemory;
 
-public class FastHashTest {
+public class FastHashTest extends MmapTestBase {
 
 	private static final int[] LENGTHS = { 0, 1, 3, 4, 7, 8, 12, 15, 16, 31, 32, 33, 36, 39, 40, 63, 64, 65, 80 };
 
 	@Test
 	public void testCanonicalXXHash64ReferenceVectors() {
-		Memory sharedMemory = new SharedMemory(64, "test-fast-hash-reference-vectors.mmap");
+		Memory sharedMemory = new SharedMemory(64, mmapFile("test-fast-hash-reference-vectors.mmap"));
 		try {
 			assertReferenceVector(new byte[0], 0xef46db3751d8e999L, sharedMemory);
 			assertReferenceVector("hello".getBytes(StandardCharsets.US_ASCII), 0x26c7827d889f6da3L, sharedMemory);

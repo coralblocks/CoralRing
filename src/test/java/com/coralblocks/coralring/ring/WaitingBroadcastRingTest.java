@@ -27,15 +27,16 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 
 
-public class WaitingBroadcastRingTest {
+public class WaitingBroadcastRingTest extends MmapTestBase {
 
 	@Test
 	public void testFetchSequenceIdentifiesAbsentConsumer() {
 
-		final String filename = "test-absent-broadcast-consumer.mmap";
+		final String filename = mmapFile("test-absent-broadcast-consumer.mmap");
 		final int capacity = 4;
 		final int numberOfConsumers = 2;
 		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
@@ -77,7 +78,7 @@ public class WaitingBroadcastRingTest {
 	@Test
 	public void testDisableOnlyConsumerDoesNotBlockProducer() {
 
-		final String filename = "test-disable-only-broadcast-consumer.mmap";
+		final String filename = mmapFile("test-disable-only-broadcast-consumer.mmap");
 		final int capacity = 4;
 		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
 				capacity, Message.getMaxSize(), Message.class, filename, 1);
@@ -99,7 +100,7 @@ public class WaitingBroadcastRingTest {
 	@Test
 	public void testDisableConsumerRejectsInvalidIndex() {
 
-		final String filename = "test-disable-invalid-broadcast-consumer.mmap";
+		final String filename = mmapFile("test-disable-invalid-broadcast-consumer.mmap");
 		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
 				4, Message.getMaxSize(), Message.class, filename, 1);
 
@@ -114,7 +115,7 @@ public class WaitingBroadcastRingTest {
 	@Test
 	public void testConsumerRejectsInvalidIndex() {
 
-		final String filename = "test-invalid-broadcast-consumer-index.mmap";
+		final String filename = mmapFile("test-invalid-broadcast-consumer-index.mmap");
 		final int numberOfConsumers = 2;
 		final WaitingBroadcastRingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(
 				4, Message.getMaxSize(), Message.class, filename, numberOfConsumers);
@@ -140,7 +141,7 @@ public class WaitingBroadcastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-waiting-ring.mmap";
+		final String filename = mmapFile("test-waiting-ring.mmap");
 		
 		final int messagesToSend = 1_000; // less than the capacity (1024) so it will never wrap
 		final int maxBatchSize = 50;
@@ -259,7 +260,7 @@ public class WaitingBroadcastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-waiting-ring.mmap";
+		final String filename = mmapFile("test-waiting-ring.mmap");
 		
 		final int messagesToSend = 1_025; // one more than capacity (1024) to wrap
 		final int maxBatchSize = 50;
@@ -381,7 +382,7 @@ public class WaitingBroadcastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-waiting-ring.mmap";
+		final String filename = mmapFile("test-waiting-ring.mmap");
 		
 		final int messagesToSend = 1_000_000;
 		final int maxBatchSize = 1_000;
@@ -497,7 +498,7 @@ public class WaitingBroadcastRingTest {
 	@Test
 	public void testFindingCapacity() {
 		
-		final String filename = "test-ring-capacity-bcast.mmap";
+		final String filename = mmapFile("test-ring-capacity-bcast.mmap");
 		
 		final RingProducer<Message> ringProducer = new WaitingBroadcastRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename, 3);
 		final RingConsumer<Message> ringConsumer0 = new WaitingBroadcastRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, 0, 3);
@@ -517,7 +518,7 @@ public class WaitingBroadcastRingTest {
 	@Test
 	public void testFindingNumberOfConsumers() {
 		
-		final String filename = "test-ring-capacity-bcast.mmap";
+		final String filename = mmapFile("test-ring-capacity-bcast.mmap");
 		
 		final int numberOfConsumers = 3;
 		
@@ -544,7 +545,7 @@ public class WaitingBroadcastRingTest {
 		final int numberOfConsumers = 3;
 		final long headerSize = ((long) numberOfConsumers + 1) * WaitingBroadcastRingProducer.CPU_CACHE_LINE;
 		final long totalMemorySize = headerSize + (long) capacity * maxObjectSize;
-		final File file = File.createTempFile("test-large-waiting-broadcast-ring-", ".mmap");
+		final File file = new File(mmapFile("test-large-waiting-broadcast-ring.mmap"));
 
 		try {
 			try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) {

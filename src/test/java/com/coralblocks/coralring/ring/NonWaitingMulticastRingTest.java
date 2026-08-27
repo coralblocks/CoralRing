@@ -23,17 +23,18 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 
 
-public class NonWaitingMulticastRingTest {
+public class NonWaitingMulticastRingTest extends MmapTestBase {
 	
 	@Test
 	public void testNotWrapping() throws InterruptedException {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_000; // less than the capacity (1024) so it will never wrap
 		final int maxBatchSize = 50;
@@ -149,7 +150,7 @@ public class NonWaitingMulticastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_025; // one more than capacity (1024) to wrap
 		final int maxBatchSize = 50;
@@ -268,7 +269,7 @@ public class NonWaitingMulticastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 2_000;
 		final int maxBatchSize = 50;
@@ -320,7 +321,7 @@ public class NonWaitingMulticastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
 		final List<RingConsumer<Message>> ringConsumers = new ArrayList<RingConsumer<Message>>(3);
@@ -396,7 +397,7 @@ public class NonWaitingMulticastRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_000;
 		final int maxBatchSize = 50;

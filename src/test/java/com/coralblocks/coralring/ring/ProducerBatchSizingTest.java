@@ -15,17 +15,14 @@
  */
 package com.coralblocks.coralring.ring;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 import com.coralblocks.coralring.util.Builder;
 
-public class ProducerBatchSizingTest {
+public class ProducerBatchSizingTest extends MmapTestBase {
 
 	private static final int CAPACITY = 16;
 	private static final int INITIAL_BATCH_SIZE = 4;
@@ -42,29 +39,28 @@ public class ProducerBatchSizingTest {
 	}
 
 	@Test
-	public void testWaitingRingProducerBatchSizing() throws IOException {
+	public void testWaitingRingProducerBatchSizing() {
 		CountingBuilder builder = new CountingBuilder();
 		RingProducer<Message> producer = new WaitingRingProducer<Message>(CAPACITY, Message.getMaxSize(), builder, newFilename(), INITIAL_BATCH_SIZE);
 		assertBatchSizing(producer, builder);
 	}
 
 	@Test
-	public void testWaitingBroadcastRingProducerBatchSizing() throws IOException {
+	public void testWaitingBroadcastRingProducerBatchSizing() {
 		CountingBuilder builder = new CountingBuilder();
 		RingProducer<Message> producer = new WaitingBroadcastRingProducer<Message>(CAPACITY, Message.getMaxSize(), builder, newFilename(), 1, INITIAL_BATCH_SIZE);
 		assertBatchSizing(producer, builder);
 	}
 
 	@Test
-	public void testNonWaitingRingProducerBatchSizing() throws IOException {
+	public void testNonWaitingRingProducerBatchSizing() {
 		CountingBuilder builder = new CountingBuilder();
 		RingProducer<Message> producer = new NonWaitingRingProducer<Message>(CAPACITY, Message.getMaxSize(), builder, newFilename(), false, INITIAL_BATCH_SIZE);
 		assertBatchSizing(producer, builder);
 	}
 
-	private static String newFilename() throws IOException {
-		Path file = Files.createTempFile("coralring-batch-sizing-", ".mmap");
-		return file.toString();
+	private String newFilename() {
+		return mmapFile("coralring-batch-sizing.mmap");
 	}
 
 	private static void assertBatchSizing(RingProducer<Message> producer, CountingBuilder builder) {

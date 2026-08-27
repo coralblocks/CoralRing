@@ -23,17 +23,18 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 
 
-public class WaitingRingTest {
+public class WaitingRingTest extends MmapTestBase {
 	
 	@Test
 	public void testAll() throws InterruptedException {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-waiting-ring.mmap";
+		final String filename = mmapFile("test-waiting-ring.mmap");
 		
 		final int messagesToSend = 1_000_000;
 		final int maxBatchSize = 100;
@@ -125,7 +126,7 @@ public class WaitingRingTest {
 	@Test
 	public void testFindingCapacity() {
 		
-		final String filename = "test-ring-capacity.mmap";
+		final String filename = mmapFile("test-ring-capacity.mmap");
 		
 		final RingProducer<Message> ringProducer = new WaitingRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename);
 		final RingConsumer<Message> ringConsumer = new WaitingRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename);

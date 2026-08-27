@@ -18,10 +18,11 @@ package com.coralblocks.coralring.ring;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
 
-public class RingAlignmentTest {
+public class RingAlignmentTest extends MmapTestBase {
 
 	public static class AlignedMessage implements MemorySerializable {
 
@@ -71,7 +72,7 @@ public class RingAlignmentTest {
 
 	@Test
 	public void testWaitingRingAlignsMessages() {
-		final String filename = "test-waiting-ring-alignment.mmap";
+		final String filename = mmapFile("test-waiting-ring-alignment.mmap");
 		RingProducer<AlignedMessage> producer = new WaitingRingProducer<AlignedMessage>(
 				4, AlignedMessage.getMaxSize(), AlignedMessage.class, filename);
 		RingConsumer<AlignedMessage> consumer = new WaitingRingConsumer<AlignedMessage>(
@@ -86,7 +87,7 @@ public class RingAlignmentTest {
 
 	@Test
 	public void testWaitingBroadcastRingAlignsMessages() {
-		final String filename = "test-waiting-broadcast-ring-alignment.mmap";
+		final String filename = mmapFile("test-waiting-broadcast-ring-alignment.mmap");
 		RingProducer<AlignedMessage> producer = new WaitingBroadcastRingProducer<AlignedMessage>(
 				4, AlignedMessage.getMaxSize(), AlignedMessage.class, filename, 1);
 		RingConsumer<AlignedMessage> consumer = new WaitingBroadcastRingConsumer<AlignedMessage>(
@@ -101,7 +102,7 @@ public class RingAlignmentTest {
 
 	@Test
 	public void testNonWaitingRingAlignsMessages() {
-		final String filename = "test-nonwaiting-ring-alignment.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring-alignment.mmap");
 		RingProducer<AlignedMessage> producer = new NonWaitingRingProducer<AlignedMessage>(
 				4, AlignedMessage.getMaxSize(), AlignedMessage.class, filename, true);
 		RingConsumer<AlignedMessage> consumer = new NonWaitingRingConsumer<AlignedMessage>(

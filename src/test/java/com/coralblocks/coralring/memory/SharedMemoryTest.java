@@ -20,16 +20,17 @@ import java.nio.ByteBuffer;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 
-public class SharedMemoryTest {
+public class SharedMemoryTest extends MmapTestBase {
 
 	@Test
 	public void testRejectsInvalidArgumentsWithSpecificExceptions() {
 		Assert.assertThrows(IllegalArgumentException.class, () -> new SharedMemory(64, null));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> SharedMemory.findFileSize("test-missing-shared-memory-file.mmap"));
+				() -> SharedMemory.findFileSize(mmapFile("test-missing-shared-memory-file.mmap")));
 
-		Memory memory = new SharedMemory(8);
+		Memory memory = new SharedMemory(8, mmapFile("shared-memory.mmap"));
 		try {
 			Assert.assertThrows(IllegalArgumentException.class,
 					() -> memory.putByteBuffer(memory.getPointer(), ByteBuffer.allocate(8), 1));
@@ -43,7 +44,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testReleaseIsIdempotent() {
 
-		final String retainedFilename = "test-shared-memory-idempotent-retain.mmap";
+		final String retainedFilename = mmapFile("test-shared-memory-idempotent-retain.mmap");
 		Memory sharedMemory = new SharedMemory(64, retainedFilename);
 		sharedMemory.release(false);
 		sharedMemory.release(true);
@@ -51,7 +52,7 @@ public class SharedMemoryTest {
 		Assert.assertTrue(retainedFile.exists());
 		Assert.assertTrue(retainedFile.delete());
 
-		final String deletedFilename = "test-shared-memory-idempotent-delete.mmap";
+		final String deletedFilename = mmapFile("test-shared-memory-idempotent-delete.mmap");
 		sharedMemory = new SharedMemory(64, deletedFilename);
 		sharedMemory.release(true);
 		sharedMemory.release(true);
@@ -65,7 +66,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testMismatchedAttachDoesNotResizeExistingFile() {
 
-		final String filename = "test-shared-memory-size-mismatch.mmap";
+		final String filename = mmapFile("test-shared-memory-size-mismatch.mmap");
 		Memory initialMemory = new SharedMemory(64, filename);
 		initialMemory.release(false);
 
@@ -83,7 +84,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testPutByteBufferUsesAndAdvancesSourcePosition() {
 
-		Memory memory = new SharedMemory(4);
+		Memory memory = new SharedMemory(4, mmapFile("shared-memory.mmap"));
 		try {
 			ByteBuffer source = ByteBuffer.allocateDirect(4);
 			source.put(new byte[] { 10, 20, 30, 40 });
@@ -103,7 +104,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testPutByteBufferRejectsLengthBeyondRemainingBeforeCopying() {
 
-		Memory memory = new SharedMemory(4);
+		Memory memory = new SharedMemory(4, mmapFile("shared-memory.mmap"));
 		try {
 			ByteBuffer source = ByteBuffer.allocateDirect(8);
 			source.put(new byte[] { 10, 20, 30, 40, 50 });
@@ -125,7 +126,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testGetByteBufferRejectsNegativeLength() {
 
-		Memory memory = new SharedMemory(8);
+		Memory memory = new SharedMemory(8, mmapFile("shared-memory.mmap"));
 		try {
 			ByteBuffer destination = ByteBuffer.allocateDirect(8);
 			Assert.assertThrows(IllegalArgumentException.class,
@@ -139,7 +140,7 @@ public class SharedMemoryTest {
 	@Test
 	public void testGetByteBufferRejectsLengthBeyondRemainingBeforeCopying() {
 
-		Memory memory = new SharedMemory(8);
+		Memory memory = new SharedMemory(8, mmapFile("shared-memory.mmap"));
 		try {
 			long address = memory.getPointer();
 			memory.putByte(address, (byte) 1);
@@ -168,7 +169,7 @@ public class SharedMemoryTest {
 		// 64 bytes = 8 longs, 16 ints, 32 shorts and 64 bytes
 		final long size = 64; // 8 * 8 = 64
 		
-		Memory memory = new SharedMemory(size);
+		Memory memory = new SharedMemory(size, mmapFile("shared-memory.mmap"));
 		final long address = memory.getPointer();
 		
 		// Adding bytes
@@ -216,7 +217,7 @@ public class SharedMemoryTest {
 		// 64 bytes = 8 longs, 16 ints, 32 shorts and 64 bytes
 		final long size = 64; // 8 * 8 = 64
 		
-		Memory memory = new SharedMemory(size);
+		Memory memory = new SharedMemory(size, mmapFile("shared-memory.mmap"));
 		final long address = memory.getPointer();
 		
 		// Adding bytes
@@ -264,7 +265,7 @@ public class SharedMemoryTest {
 		// 64 bytes = 8 longs, 16 ints, 32 shorts and 64 bytes
 		final long size = 64; // 8 * 8 = 64
 		
-		final String mmapFileUsedAsBridge = "shared-memory.mmap";
+		final String mmapFileUsedAsBridge = mmapFile("shared-memory.mmap");
 		
 		Memory memory1 = new SharedMemory(size, mmapFileUsedAsBridge);
 		final long address1 = memory1.getPointer();
@@ -318,7 +319,7 @@ public class SharedMemoryTest {
 		// 64 bytes = 8 longs, 16 ints, 32 shorts and 64 bytes
 		final long size = 64; // 8 * 8 = 64
 		
-		final String mmapFileUsedAsBridge = "shared-memory.mmap";
+		final String mmapFileUsedAsBridge = mmapFile("shared-memory.mmap");
 		
 		Memory memory1 = new SharedMemory(size, mmapFileUsedAsBridge);
 		final long address1 = memory1.getPointer();

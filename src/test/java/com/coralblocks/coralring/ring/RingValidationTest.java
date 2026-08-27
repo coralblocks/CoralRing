@@ -20,56 +20,57 @@ import java.io.File;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 import com.coralblocks.coralring.util.Builder;
 
-public class RingValidationTest {
-
-	private static final String UNUSED_FILENAME = "test-invalid-ring-arguments.mmap";
+public class RingValidationTest extends MmapTestBase {
 
 	@Test
 	public void testProducersRejectInvalidArgumentsBeforeCreatingFile() {
+		final String unusedFilename = mmapFile("test-invalid-ring-arguments.mmap");
 		Builder<Message> nullBuilder = null;
 
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingProducer<Message>(0, Message.getMaxSize(), Message.class, UNUSED_FILENAME));
+				() -> new WaitingRingProducer<Message>(0, Message.getMaxSize(), Message.class, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingProducer<Message>(1, 0, Message.class, UNUSED_FILENAME));
+				() -> new WaitingRingProducer<Message>(1, 0, Message.class, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingProducer<Message>(1, Message.getMaxSize(), nullBuilder, UNUSED_FILENAME));
+				() -> new WaitingRingProducer<Message>(1, Message.getMaxSize(), nullBuilder, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new NonWaitingRingProducer<Message>(-1, Message.getMaxSize(), Message.class, UNUSED_FILENAME));
+				() -> new NonWaitingRingProducer<Message>(-1, Message.getMaxSize(), Message.class, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
 				() -> new NonWaitingRingProducer<Message>(1, Message.getMaxSize(), Message.class, null));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingBroadcastRingProducer<Message>(1, Message.getMaxSize(), Message.class, UNUSED_FILENAME, 0));
+				() -> new WaitingBroadcastRingProducer<Message>(1, Message.getMaxSize(), Message.class, unusedFilename, 0));
 
-		Assert.assertFalse(new File(UNUSED_FILENAME).exists());
+		Assert.assertFalse(new File(unusedFilename).exists());
 	}
 
 	@Test
 	public void testConsumersRejectInvalidArgumentsBeforeOpeningFile() {
+		final String unusedFilename = mmapFile("test-invalid-ring-arguments.mmap");
 		Builder<Message> nullBuilder = null;
 
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingConsumer<Message>(-2, Message.getMaxSize(), Message.class, UNUSED_FILENAME));
+				() -> new WaitingRingConsumer<Message>(-2, Message.getMaxSize(), Message.class, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingConsumer<Message>(1, 0, Message.class, UNUSED_FILENAME));
+				() -> new WaitingRingConsumer<Message>(1, 0, Message.class, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingRingConsumer<Message>(1, Message.getMaxSize(), nullBuilder, UNUSED_FILENAME));
+				() -> new WaitingRingConsumer<Message>(1, Message.getMaxSize(), nullBuilder, unusedFilename));
 		Assert.assertThrows(IllegalArgumentException.class,
 				() -> new NonWaitingRingConsumer<Message>(1, Message.getMaxSize(), Message.class, null));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new NonWaitingRingConsumer<Message>(1, Message.getMaxSize(), Message.class, UNUSED_FILENAME, false, Float.NaN));
+				() -> new NonWaitingRingConsumer<Message>(1, Message.getMaxSize(), Message.class, unusedFilename, false, Float.NaN));
 		Assert.assertThrows(IllegalArgumentException.class,
-				() -> new WaitingBroadcastRingConsumer<Message>(1, Message.getMaxSize(), Message.class, UNUSED_FILENAME, 0, 0));
+				() -> new WaitingBroadcastRingConsumer<Message>(1, Message.getMaxSize(), Message.class, unusedFilename, 0, 0));
 
-		Assert.assertFalse(new File(UNUSED_FILENAME).exists());
+		Assert.assertFalse(new File(unusedFilename).exists());
 	}
 
 	@Test
 	public void testInvalidRollbacksUseIllegalArgumentException() {
-		final String waitingFilename = "test-invalid-waiting-rollback.mmap";
+		final String waitingFilename = mmapFile("test-invalid-waiting-rollback.mmap");
 		RingProducer<Message> waitingProducer = new WaitingRingProducer<Message>(1, Message.getMaxSize(), Message.class, waitingFilename);
 		RingConsumer<Message> waitingConsumer = new WaitingRingConsumer<Message>(1, Message.getMaxSize(), Message.class, waitingFilename);
 		try {
@@ -80,7 +81,7 @@ public class RingValidationTest {
 			waitingProducer.close(true);
 		}
 
-		final String broadcastFilename = "test-invalid-broadcast-rollback.mmap";
+		final String broadcastFilename = mmapFile("test-invalid-broadcast-rollback.mmap");
 		RingProducer<Message> broadcastProducer = new WaitingBroadcastRingProducer<Message>(1, Message.getMaxSize(), Message.class, broadcastFilename, 1);
 		RingConsumer<Message> broadcastConsumer = new WaitingBroadcastRingConsumer<Message>(1, Message.getMaxSize(), Message.class, broadcastFilename, 0, 1);
 		try {
@@ -90,7 +91,7 @@ public class RingValidationTest {
 			broadcastProducer.close(true);
 		}
 
-		final String nonWaitingFilename = "test-invalid-non-waiting-rollback.mmap";
+		final String nonWaitingFilename = mmapFile("test-invalid-non-waiting-rollback.mmap");
 		RingProducer<Message> nonWaitingProducer = new NonWaitingRingProducer<Message>(1, Message.getMaxSize(), Message.class, nonWaitingFilename);
 		RingConsumer<Message> nonWaitingConsumer = new NonWaitingRingConsumer<Message>(1, Message.getMaxSize(), Message.class, nonWaitingFilename);
 		try {

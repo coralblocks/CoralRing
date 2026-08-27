@@ -23,6 +23,7 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.coralblocks.coralring.MmapTestBase;
 import com.coralblocks.coralring.example.ring.Message;
 import com.coralblocks.coralring.memory.Memory;
 import com.coralblocks.coralring.memory.MemorySerializable;
@@ -30,7 +31,7 @@ import com.coralblocks.coralring.util.Builder;
 import com.coralblocks.coralring.util.PayloadByteBufferMessage;
 
 
-public class NonWaitingRingTest {
+public class NonWaitingRingTest extends MmapTestBase {
 
 	public static class StatefulWriteMessage implements MemorySerializable {
 
@@ -55,7 +56,7 @@ public class NonWaitingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_000; // less than the capacity (1024) so it will never wrap
 		final int maxBatchSize = 50;
@@ -151,7 +152,7 @@ public class NonWaitingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_025; // one more than capacity (1024) to wrap
 		final int maxBatchSize = 50;
@@ -250,7 +251,7 @@ public class NonWaitingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 2_000;
 		final int maxBatchSize = 50;
@@ -301,7 +302,7 @@ public class NonWaitingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(8, Message.getMaxSize(), Message.class, filename);
 		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(8, Message.getMaxSize(), Message.class, filename);
@@ -372,7 +373,7 @@ public class NonWaitingRingTest {
 		
 		// NOTE: Here we are testing on the same JVM for convenience
 		
-		final String filename = "test-nonwaiting-ring.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring.mmap");
 		
 		final int messagesToSend = 1_000;
 		final int maxBatchSize = 50;
@@ -466,7 +467,7 @@ public class NonWaitingRingTest {
 	@Test
 	public void testChecksumIncludesLastMessageByte() {
 
-		final String filename = "test-nonwaiting-ring-checksum-corruption.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring-checksum-corruption.mmap");
 
 		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(Message.getMaxSize(), Message.class, filename, true);
 		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(Message.getMaxSize(), Message.class, filename, true);
@@ -494,7 +495,7 @@ public class NonWaitingRingTest {
 	@Test
 	public void testChecksumRejectsInvalidPayloadSize() {
 
-		final String filename = "test-nonwaiting-ring-invalid-payload-size.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring-invalid-payload-size.mmap");
 		final int maxPayloadSize = 8;
 		final Builder<PayloadByteBufferMessage> builder = new Builder<PayloadByteBufferMessage>() {
 			@Override
@@ -530,7 +531,7 @@ public class NonWaitingRingTest {
 	@Test
 	public void testChecksumDoesNotRequireDeterministicWriteTo() {
 
-		final String filename = "test-nonwaiting-ring-stateful-write.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring-stateful-write.mmap");
 		final RingProducer<StatefulWriteMessage> ringProducer = new NonWaitingRingProducer<StatefulWriteMessage>(
 				Integer.BYTES, StatefulWriteMessage.class, filename, true);
 		final RingConsumer<StatefulWriteMessage> ringConsumer = new NonWaitingRingConsumer<StatefulWriteMessage>(
@@ -560,7 +561,7 @@ public class NonWaitingRingTest {
 	@Test
 	public void testFindingCapacity() {
 		
-		final String filename = "test-ring-capacity.mmap";
+		final String filename = mmapFile("test-ring-capacity.mmap");
 		
 		final RingProducer<Message> ringProducer = new WaitingRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename);
 		final RingConsumer<Message> ringConsumer = new WaitingRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename);
@@ -574,7 +575,7 @@ public class NonWaitingRingTest {
 	@Test
 	public void testFindingCapacityWithChecksum() {
 
-		final String filename = "test-nonwaiting-ring-checksum-capacity.mmap";
+		final String filename = mmapFile("test-nonwaiting-ring-checksum-capacity.mmap");
 
 		final RingProducer<Message> ringProducer = new NonWaitingRingProducer<Message>(2048, Message.getMaxSize(), Message.class, filename, true);
 		final RingConsumer<Message> ringConsumer = new NonWaitingRingConsumer<Message>(-1, Message.getMaxSize(), Message.class, filename, true);
