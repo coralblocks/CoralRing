@@ -40,8 +40,9 @@ public class SharedMemoryProducer {
 		memory.putIntVolatile(address, currIndex);
 		
 		for(offset = 4; // skip the header 
-			offset < size - 4 && !thread.isInterrupted(); // don't send the last message
+			offset < size - 4; // don't send the last message
 			offset += 4) { // sending integers (4 bytes)
+				if (thread.isInterrupted()) break;
 				memory.putInt(address + offset, ++valueToSend);
 				if (offset > 4) System.out.print(",");
 				System.out.print(valueToSend);
