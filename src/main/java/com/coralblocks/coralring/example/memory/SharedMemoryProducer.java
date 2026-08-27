@@ -42,6 +42,7 @@ public class SharedMemoryProducer {
 		for(offset = 4; // skip the header 
 			offset < size - 4; // don't send the last message
 			offset += 4) { // sending integers (4 bytes)
+
 				if (thread.isInterrupted()) break;
 				memory.putInt(address + offset, ++valueToSend);
 				if (offset > 4) System.out.print(",");

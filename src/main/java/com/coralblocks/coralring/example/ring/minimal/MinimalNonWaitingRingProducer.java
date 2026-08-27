@@ -32,6 +32,7 @@ public class MinimalNonWaitingRingProducer {
 		final Thread thread = Thread.currentThread();
 
 		OUTER: for(int i = 0; i < messagesToSend; i += 2) { // note we are looping 2 by 2 (we are sending a batch of 2 messages)
+
 			if (thread.isInterrupted()) break;
 			
 			MutableLong ml; // our data transfer mutable object
