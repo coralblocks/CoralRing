@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
@@ -51,6 +52,7 @@ public class SharedMemory implements Memory {
 	private static Unsafe unsafe;
 	private static boolean UNSAFE_AVAILABLE = false;
 	private static boolean ADDRESS_AVAILABLE = false;
+	private static final boolean LITTLE_ENDIAN_PLATFORM = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 	
 	static {
 		try {
@@ -125,7 +127,7 @@ public class SharedMemory implements Memory {
 	 * @return true if available
 	 */
 	public static boolean isAvailable() {
-		return UNSAFE_AVAILABLE && mappingStrategy != null && ADDRESS_AVAILABLE;
+		return LITTLE_ENDIAN_PLATFORM && UNSAFE_AVAILABLE && mappingStrategy != null && ADDRESS_AVAILABLE;
 	}
 
 	private final long address;
@@ -161,6 +163,9 @@ public class SharedMemory implements Memory {
 	public SharedMemory(long size, String filename) {
 		if (filename == null) {
 			throw new IllegalArgumentException("filename cannot be null");
+		}
+		if (!LITTLE_ENDIAN_PLATFORM) {
+			throw new IllegalStateException("SharedMemory requires a little-endian platform");
 		}
 		
 		if (!UNSAFE_AVAILABLE) {

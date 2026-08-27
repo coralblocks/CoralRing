@@ -52,10 +52,21 @@ public final class FastHash {
 	static final long PRIME64_5 = 0x27d4eb2f165667c5L;
 
 	private static final long hash64bytes(final ByteBuffer buffer, long seed) {
+		final ByteOrder originalOrder = buffer.order();
+		if (originalOrder == ByteOrder.LITTLE_ENDIAN) return hash64bytesLittleEndian(buffer, seed);
+
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+		try {
+			return hash64bytesLittleEndian(buffer, seed);
+		} finally {
+			buffer.order(originalOrder);
+		}
+	}
+
+	private static final long hash64bytesLittleEndian(final ByteBuffer buffer, long seed) {
 
 		final int start = buffer.position();
 		final int bEnd = buffer.limit();
-		final ByteOrder order = buffer.order();
 
 		long len = bEnd - start;
 		long h64;
@@ -141,9 +152,7 @@ public final class FastHash {
 		}
 
 		if (p + 4 <= bEnd) {
-			buffer.order(ByteOrder.LITTLE_ENDIAN);
-			long finalInt = buffer.getInt(p);
-			buffer.order(order);
+			long finalInt = buffer.getInt(p) & 0xFFFFFFFFL;
 			h64 ^= finalInt * PRIME64_1;
 			h64 = Long.rotateLeft(h64, 23) * PRIME64_2 + PRIME64_3;
 			p += 4;
@@ -246,7 +255,7 @@ public final class FastHash {
 		}
 
 		if (p + 4 <= bEnd) {
-			long finalInt = memory.getInt(p);
+			long finalInt = memory.getInt(p) & 0xFFFFFFFFL;
 			h64 ^= finalInt * PRIME64_1;
 			h64 = Long.rotateLeft(h64, 23) * PRIME64_2 + PRIME64_3;
 			p += 4;
@@ -297,6 +306,6 @@ public final class FastHash {
 	}
 	
 	private static final int convert64To32(long val) {
-		return (int) (val & 0x00FFFFFFFF);
+		return (int) val;
 	}
 }
